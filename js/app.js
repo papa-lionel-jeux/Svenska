@@ -1238,3 +1238,288 @@ updateDefiMenuCard();
 
 // PWA Service Worker (désactivé en mode fichier local)
 // navigator.serviceWorker non disponible sans serveur HTTP
+
+// ══════════════════════════════════════════════════════════
+// MODULE TRADUCTEUR FR ↔ SE
+// ══════════════════════════════════════════════════════════
+
+var _tradDir = 'fr2sv';          // 'fr2sv' | 'sv2fr'
+var _tradHistory = [];           // [{src, dst, hint, dir}]
+var _tradSpeechRec = null;
+var _tradIsRecording = false;
+var _tradLastResult = null;
+
+function showTranslator() {
+    showScreen('translatorScreen');
+    renderTradHistory();
+}
+
+function setTradDir(dir) {
+    _tradDir = dir;
+    _updateTradUI();
+}
+
+function swapTradDir() {
+    _tradDir = _tradDir === 'fr2sv' ? 'sv2fr' : 'fr2sv';
+    // Swap textarea content with last translation if available
+    if (_tradLastResult) {
+        document.getElementById('tradInput').value = _tradLastResult;
+        _tradLastResult = null;
+        document.getElementById('tradResultBox').style.display = 'none';
+        document.getElementById('tradResultText').textContent = '';
+    }
+    _updateTradUI();
+    onTradInput();
+}
+
+function _updateTradUI() {
+    var isFr2sv = _tradDir === 'fr2sv';
+    document.getElementById('tradLangA').classList.toggle('active', isFr2sv);
+    document.getElementById('tradLangB').classList.toggle('active', !isFr2sv);
+    document.getElementById('tradSrcFlag').textContent  = isFr2sv ? '🇫🇷' : '🇸🇪';
+    document.getElementById('tradSrcLang').textContent  = isFr2sv ? 'Français — texte à traduire' : 'Suédois — texte à traduire';
+    document.getElementById('tradDstFlag').textContent  = isFr2sv ? '🇸🇪' : '🇫🇷';
+    document.getElementById('tradDstLang').textContent  = isFr2sv ? 'Traduction suédoise' : 'Traduction française';
+    document.getElementById('tradInput').placeholder    = isFr2sv ? 'Écrivez ou dictez en français…' : 'Skriv eller diktera på svenska…';
+}
+
+function onTradInput() {
+    var v = (document.getElementById('tradInput').value || '').trim();
+    document.getElementById('tradBtn').disabled = v.length === 0;
+}
+
+function clearTradInput() {
+    document.getElementById('tradInput').value = '';
+    document.getElementById('tradResultBox').style.display = 'none';
+    document.getElementById('tradLoading').style.display = 'none';
+    document.getElementById('tradBtn').disabled = true;
+    _tradLastResult = null;
+}
+
+// ── DICTÉE VOCALE ────────────────────────────────────────
+function toggleDictation() {
+    if (_tradIsRecording) {
+        _stopDictation();
+    } else {
+        _startDictation();
+    }
+}
+
+function _startDictation() {
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert("La reconnaissance vocale n'est pas disponible sur ce navigateur. Essayez Chrome ou Safari.");
+        return;
+    }
+    _tradSpeechRec = new SpeechRecognition();
+    _tradSpeechRec.lang = _tradDir === 'fr2sv' ? 'fr-FR' : 'sv-SE';
+    _tradSpeechRec.interimResults = true;
+    _tradSpeechRec.continuous = false;
+
+    _tradSpeechRec.onstart = function() {
+        _tradIsRecording = true;
+        var btn = document.getElementById('tradMicBtn');
+        btn.textContent = '⏹ Stop';
+        btn.classList.add('recording');
+    };
+
+    _tradSpeechRec.onresult = function(e) {
+        var transcript = '';
+        for (var i = 0; i < e.results.length; i++) {
+            transcript += e.results[i][0].transcript;
+        }
+        document.getElementById('tradInput').value = transcript;
+        onTradInput();
+    };
+
+    _tradSpeechRec.onerror = function(e) {
+        _stopDictation();
+        if (e.error !== 'aborted') {
+            alert('Erreur microphone : ' + e.error);
+        }
+    };
+
+    _tradSpeechRec.onend = function() {
+        _stopDictation();
+    };
+
+    _tradSpeechRec.start();
+}
+
+function _stopDictation() {
+    _tradIsRecording = false;
+    var btn = document.getElementById('tradMicBtn');
+    btn.textContent = '🎤 Dicter';
+    btn.classList.remove('recording');
+    if (_tradSpeechRec) {
+        try { _tradSpeechRec.stop(); } catch(e) {}
+        _tradSpeechRec = null;
+    }
+}
+
+// ── TRADUCTION VIA CLAUDE API ────────────────────────────
+async function doTranslate() {
+    var text = (document.getElementById('tradInput').value || '').trim();
+    if (!text) return;
+
+    document.getElementById('tradBtn').disabled = true;
+    document.getElementById('tradResultBox').style.display = 'none';
+    document.getElementById('tradLoading').style.display = 'flex';
+
+    var isFr2sv = _tradDir === 'fr2sv';
+    var sl = isFr2sv ? 'fr' : 'sv';
+    var tl = isFr2sv ? 'sv' : 'fr';
+
+    try {
+        // Google Translate endpoint (no key needed for short texts)
+        var url = 'https://translate.googleapis.com/translate_a/single?client=gtx'
+            + '&sl=' + sl
+            + '&tl=' + tl
+            + '&dt=t'
+            + '&q=' + encodeURIComponent(text);
+
+        var resp = await fetch(url);
+        var data = await resp.json();
+
+        // Response is nested arrays: data[0] contains sentence chunks
+        var translation = (data[0] || []).map(function(chunk) {
+            return (chunk && chunk[0]) ? chunk[0] : '';
+        }).join('');
+
+        if (!translation) throw new Error('empty');
+
+        _tradLastResult = translation;
+        document.getElementById('tradResultText').textContent = translation;
+        document.getElementById('tradResultHint').textContent = '';
+        document.getElementById('tradResultBox').style.display = 'block';
+
+        // Add to history
+        _tradHistory.unshift({ src: text, dst: translation, hint: '', dir: _tradDir });
+        if (_tradHistory.length > 10) _tradHistory.pop();
+        renderTradHistory();
+
+    } catch(err) {
+        document.getElementById('tradResultBox').style.display = 'block';
+        document.getElementById('tradResultText').textContent = '⚠️ Erreur de traduction. Vérifiez votre connexion.';
+        document.getElementById('tradResultHint').textContent = '';
+    } finally {
+        document.getElementById('tradLoading').style.display = 'none';
+        document.getElementById('tradBtn').disabled = false;
+    }
+}
+
+// ── LECTURE AUDIO — Google TTS ───────────────────────────
+function speakTranslation() {
+    var text = document.getElementById('tradResultText').textContent;
+    if (!text || text.startsWith('⚠️')) return;
+    var lang = _tradDir === 'fr2sv' ? 'sv' : 'fr';
+    _tradSpeakGoogle(text, lang);
+}
+
+function _tradSpeakGoogle(text, lang) {
+    // Google Translate TTS (no key, limited to ~200 chars per chunk)
+    var chunks = _splitTextChunks(text, 180);
+    var idx = 0;
+    function playNext() {
+        if (idx >= chunks.length) return;
+        var chunk = chunks[idx++];
+        var url = 'https://translate.googleapis.com/translate_tts?ie=UTF-8'
+            + '&client=gtx'
+            + '&tl=' + lang
+            + '&q=' + encodeURIComponent(chunk);
+        var audio = new Audio(url);
+        audio.onended = playNext;
+        audio.onerror = function() {
+            // Fallback: Web Speech API
+            _tradSpeakWebSpeech(text, lang === 'sv' ? 'sv-SE' : 'fr-FR');
+        };
+        audio.play().catch(function() {
+            _tradSpeakWebSpeech(text, lang === 'sv' ? 'sv-SE' : 'fr-FR');
+        });
+    }
+    playNext();
+}
+
+function _tradSpeakWebSpeech(text, lang) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    var utt = new SpeechSynthesisUtterance(text);
+    utt.lang = lang;
+    utt.rate = lang === 'sv-SE' ? 0.85 : 0.95;
+    var voices = window.speechSynthesis.getVoices();
+    var match = voices.find(function(v){ return v.lang.startsWith(lang.split('-')[0]); });
+    if (match) utt.voice = match;
+    window.speechSynthesis.speak(utt);
+}
+
+function _splitTextChunks(text, maxLen) {
+    var chunks = [];
+    while (text.length > maxLen) {
+        var cut = text.lastIndexOf(' ', maxLen);
+        if (cut <= 0) cut = maxLen;
+        chunks.push(text.slice(0, cut));
+        text = text.slice(cut).trim();
+    }
+    if (text.length) chunks.push(text);
+    return chunks;
+}
+
+function copyTranslation() {
+    var text = document.getElementById('tradResultText').textContent;
+    if (!text) return;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function(){
+            var btn = event.currentTarget;
+            var old = btn.innerHTML;
+            btn.innerHTML = '✅ Copié';
+            setTimeout(function(){ btn.innerHTML = old; }, 1500);
+        });
+    } else {
+        // Fallback
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+    }
+}
+
+// ── HISTORIQUE ───────────────────────────────────────────
+function renderTradHistory() {
+    var zone = document.getElementById('tradHistoryZone');
+    var list = document.getElementById('tradHistoryList');
+    if (!_tradHistory.length) { zone.style.display = 'none'; return; }
+    zone.style.display = 'block';
+    list.innerHTML = _tradHistory.map(function(h, i) {
+        var srcFlag = h.dir === 'fr2sv' ? '🇫🇷' : '🇸🇪';
+        var dstFlag = h.dir === 'fr2sv' ? '🇸🇪' : '🇫🇷';
+        return '<div class="trad-history-item" onclick="reloadHistoryItem(' + i + ')">' +
+            '<span class="trad-history-src">' + srcFlag + ' ' + _esc(h.src) + '</span>' +
+            '<span class="trad-history-dst">' + dstFlag + ' ' + _esc(h.dst) + (h.hint ? ' <span style="font-family:\'Courier New\',monospace;font-size:10px;color:var(--text-muted)">(' + _esc(h.hint) + ')</span>' : '') + '</span>' +
+            '</div>';
+    }).join('');
+}
+
+function reloadHistoryItem(i) {
+    var h = _tradHistory[i];
+    if (!h) return;
+    _tradDir = h.dir;
+    _updateTradUI();
+    document.getElementById('tradInput').value = h.src;
+    _tradLastResult = h.dst;
+    document.getElementById('tradResultText').textContent = h.dst;
+    document.getElementById('tradResultHint').textContent = h.hint || '';
+    document.getElementById('tradResultBox').style.display = 'block';
+    onTradInput();
+}
+
+function _esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Ensure voices are loaded on page load
+if (window.speechSynthesis) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = function() { window.speechSynthesis.getVoices(); };
+}

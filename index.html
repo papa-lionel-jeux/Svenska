@@ -234,6 +234,36 @@ body{min-height:100vh;height:100%;background:linear-gradient(160deg,#0d2137 0%,#
 .defi-day.lost{background:linear-gradient(135deg,#e74c3c,#922b21);color:#fff;border-color:#922b21}
 .defi-day.empty{background:rgba(26,82,118,.2);color:var(--text-muted)}
 
+/* ── TRADUCTEUR ── */
+.trad-screen{padding:4px 0 12px}
+.trad-dir-toggle{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;flex-shrink:0}
+.trad-lang-btn{background:rgba(26,82,118,.5);border:2px solid rgba(46,134,193,.4);border-radius:10px;padding:6px 14px;font-size:13px;font-weight:700;color:var(--snow);cursor:pointer;font-family:inherit;transition:all .15s;min-width:90px;text-align:center}
+.trad-lang-btn.active{background:rgba(82,190,128,.2);border-color:var(--aurora-green);color:var(--aurora-green)}
+.trad-swap-btn{background:rgba(241,196,15,.15);border:1.5px solid rgba(241,196,15,.4);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:transform .25s;flex-shrink:0}
+.trad-swap-btn:hover{transform:rotate(180deg);background:rgba(241,196,15,.28)}
+.trad-box{background:linear-gradient(135deg,rgba(26,82,118,.5),rgba(13,33,55,.7));border:1.5px solid rgba(46,134,193,.3);border-radius:14px;padding:10px 12px;margin-bottom:10px;position:relative}
+.trad-box-label{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.trad-textarea{width:100%;min-height:72px;background:transparent;border:none;outline:none;font-size:16px;font-weight:700;color:var(--snow);font-family:'Nunito','Segoe UI',sans-serif;resize:none;line-height:1.5;caret-color:var(--aurora-green)}
+.trad-textarea::placeholder{color:rgba(180,210,240,.35);font-weight:400}
+.trad-actions{display:flex;gap:7px;margin-top:6px;justify-content:flex-end;flex-wrap:wrap}
+.trad-icon-btn{background:rgba(46,134,193,.18);border:1.5px solid rgba(46,134,193,.35);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--aurora-teal);cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:5px}
+.trad-icon-btn:hover{background:rgba(46,134,193,.32);color:#fff}
+.trad-icon-btn:disabled{opacity:.35;cursor:not-allowed}
+.trad-icon-btn.recording{background:rgba(231,76,60,.2);border-color:#e74c3c;color:#e74c3c;animation:pulse-rec .8s ease-in-out infinite}
+@keyframes pulse-rec{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.4)}50%{box-shadow:0 0 0 6px rgba(231,76,60,0)}}
+.trad-result-box{background:linear-gradient(135deg,rgba(30,106,58,.18),rgba(26,188,156,.1));border:1.5px solid rgba(82,190,128,.3);border-radius:14px;padding:10px 12px;margin-bottom:10px;min-height:60px}
+.trad-result-text{font-size:17px;font-weight:700;color:var(--snow);line-height:1.5;word-break:break-word}
+.trad-result-hint{font-size:11px;color:var(--aurora-teal);font-family:'Courier New',monospace;margin-top:4px}
+.trad-translate-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--aurora-green),var(--aurora-teal));color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:8px;letter-spacing:.3px}
+.trad-translate-btn:hover{opacity:.88;transform:translateY(-1px)}
+.trad-translate-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.trad-history{margin-top:8px}
+.trad-history-title{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px}
+.trad-history-item{display:flex;flex-direction:column;gap:2px;padding:7px 10px;background:rgba(26,82,118,.25);border:1px solid rgba(46,134,193,.15);border-radius:10px;margin-bottom:5px;cursor:pointer;transition:background .12s}
+.trad-history-item:hover{background:rgba(46,134,193,.2)}
+.trad-history-src{font-size:13px;font-weight:700;color:var(--snow)}
+.trad-history-dst{font-size:12px;color:var(--aurora-teal)}
+
 /* ── AI LOADING ── */
 .ai-loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:.65rem;font-size:13px;color:var(--text-muted)}
 .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--aurora-green);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
@@ -315,6 +345,9 @@ body{min-height:100vh;height:100%;background:linear-gradient(160deg,#0d2137 0%,#
             </div>
             <div class="mode-card" onclick="startReview()" id="reviewCard" style="display:none">
                 <span class="mode-jp">🔁</span><h3>Révision</h3><p id="reviewCount">Retravailler les erreurs</p>
+            </div>
+            <div class="mode-card" onclick="showTranslator()" style="border-color:rgba(241,196,15,.35);background:rgba(241,196,15,.08)">
+                <span class="mode-jp">🌐</span><h3>Traducteur</h3><p>FR ↔ SE · dicter &amp; écouter</p>
             </div>
         </div>
 
@@ -1135,6 +1168,57 @@ body{min-height:100vh;height:100%;background:linear-gradient(160deg,#0d2137 0%,#
     <div class="wrong-list" id="wrongList"></div>
     <button class="btn-red" id="replayBtn" onclick="replayLast()">Rejouer</button>
     <button class="btn-ghost" onclick="goMenu()">← Changer de mode</button>
+  </div>
+</div>
+
+<!-- TRADUCTEUR FR ↔ SE -->
+<div id="translatorScreen" class="screen">
+  <button class="btn-back" onclick="goMenu()">← Retour menu</button>
+  <div class="trad-screen">
+
+    <!-- Toggle direction -->
+    <div class="trad-dir-toggle">
+      <button class="trad-lang-btn active" id="tradLangA" onclick="setTradDir('fr2sv')">🇫🇷 Français</button>
+      <button class="trad-swap-btn" onclick="swapTradDir()" title="Inverser">⇄</button>
+      <button class="trad-lang-btn" id="tradLangB" onclick="setTradDir('sv2fr')">🇸🇪 Suédois</button>
+    </div>
+
+    <!-- Zone saisie -->
+    <div class="trad-box">
+      <div class="trad-box-label">
+        <span id="tradSrcFlag">🇫🇷</span> <span id="tradSrcLang">Français — texte à traduire</span>
+      </div>
+      <textarea class="trad-textarea" id="tradInput" placeholder="Écrivez ou dictez votre texte…" rows="3" oninput="onTradInput()"></textarea>
+      <div class="trad-actions">
+        <button class="trad-icon-btn" id="tradMicBtn" onclick="toggleDictation()" title="Dicter">🎤 Dicter</button>
+        <button class="trad-icon-btn" onclick="clearTradInput()" title="Effacer">✕ Effacer</button>
+      </div>
+    </div>
+
+    <!-- Bouton traduire -->
+    <button class="trad-translate-btn" id="tradBtn" onclick="doTranslate()" disabled>🔍 Traduire avec Google</button>
+
+    <!-- Zone résultat -->
+    <div class="trad-result-box" id="tradResultBox" style="display:none">
+      <div class="trad-box-label">
+        <span id="tradDstFlag">🇸🇪</span> <span id="tradDstLang">Traduction suédoise</span>
+      </div>
+      <div id="tradResultText" class="trad-result-text"></div>
+      <div id="tradResultHint" class="trad-result-hint"></div>
+      <div class="trad-actions" style="margin-top:8px">
+        <button class="trad-icon-btn" id="tradSpeakBtn" onclick="speakTranslation()" title="Écouter">🔊 Écouter</button>
+        <button class="trad-icon-btn" onclick="copyTranslation()" title="Copier">📋 Copier</button>
+      </div>
+    </div>
+
+    <div id="tradLoading" class="ai-loading" style="display:none"><div class="spinner"></div>Google Translate…</div>
+
+    <!-- Historique -->
+    <div class="trad-history" id="tradHistoryZone" style="display:none">
+      <div class="trad-history-title">Historique récent</div>
+      <div id="tradHistoryList"></div>
+    </div>
+
   </div>
 </div>
 
