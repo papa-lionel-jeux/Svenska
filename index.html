@@ -128,8 +128,8 @@ body{min-height:100vh;height:100%;background:linear-gradient(160deg,#0d2137 0%,#
 /* ── CARTE QUESTION ── */
 .char-card-wrap{perspective:800px;margin-bottom:clamp(6px,1.5vh,12px);flex-shrink:0}
 .char-card{background:linear-gradient(135deg,rgba(26,82,118,.5),rgba(13,33,55,.7));border:1.5px solid rgba(46,134,193,.3);border-radius:16px;padding:clamp(8px,2vh,20px) clamp(10px,3vw,20px) clamp(6px,1.5vh,14px);text-align:center;position:relative}
-.main-char{font-size:clamp(44px,14vw,88px)!important;line-height:1.15;color:var(--snow);display:block;transition:transform .2s;pointer-events:none;user-select:none;font-weight:900;word-break:break-word;overflow-wrap:break-word;width:100%;}
-.speak-btn{position:absolute;top:9px;right:9px;z-index:100;pointer-events:auto;background:rgba(82,190,128,.15);border:1px solid rgba(82,190,128,.35);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--aurora-green);cursor:pointer;font-family:inherit;transition:all .15s}
+.main-char{font-size:clamp(20px,6vw,28px)!important;line-height:1.15;color:var(--snow);display:block;transition:transform .2s;pointer-events:none;user-select:none;font-weight:900;word-break:break-word;overflow-wrap:break-word;width:100%;}
+.speak-btn{background:rgba(82,190,128,.15);border:1px solid rgba(82,190,128,.35);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--aurora-green);cursor:pointer;font-family:inherit;transition:all .15s;display:inline-block;margin:0 auto}
 .speak-btn:hover{background:rgba(82,190,128,.3)}
 
 /* ── OPTIONS ── */
@@ -1003,7 +1003,7 @@ body{min-height:100vh;height:100%;background:linear-gradient(160deg,#0d2137 0%,#
     <div class="char-card">
       <button class="speak-btn" onclick="speakReconstruct()">🔊 Écouter</button>
       <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px" id="rInstruction">Reconstituez la phrase en suédois :</div>
-      <div id="rTranslation" style="font-size:18px;font-weight:700;line-height:1.4;color:var(--snow);text-align:center"></div>
+      <div id="rTranslation" style="font-size:16px;font-weight:700;line-height:1.4;color:var(--snow);text-align:center"></div>
       <div id="rHint" style="font-size:11px;color:var(--aurora-teal);font-family:'Courier New',monospace;margin-top:5px;text-align:center;opacity:0;transition:opacity .3s;background:rgba(26,188,156,0.08);border-radius:6px;padding:2px 8px;display:inline-block"></div>
     </div>
   </div>

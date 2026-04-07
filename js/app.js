@@ -528,12 +528,12 @@ function renderQuestion(){
   if(dir==='sv2fr'){
     document.getElementById('mainChar').style.fontSize='';
     document.getElementById('mainChar').textContent=q.q;
-    document.getElementById('mainChar').style.fontSize=q.q.length>20?'18px':q.q.length>12?'22px':q.q.length>8?'28px':q.q.length>4?'40px':'52px';
+    document.getElementById('mainChar').style.fontSize=q.q.length>20?'16px':q.q.length>12?'18px':q.q.length>8?'20px':q.q.length>4?'22px':'24px';
     document.getElementById('charHint').textContent=q.hint||'';
     document.getElementById('examplePhrase').textContent=q.ex||'';
   }else{
     document.getElementById('mainChar').textContent=q.a;
-    document.getElementById('mainChar').style.fontSize=q.a.length>12?'22px':q.a.length>6?'32px':'44px';
+    document.getElementById('mainChar').style.fontSize=q.a.length>15?'16px':q.a.length>12?'18px':q.a.length>6?'20px':'24px';
     document.getElementById('charHint').textContent='';
     document.getElementById('examplePhrase').textContent=q.ex||'';
   }
@@ -1049,7 +1049,7 @@ function renderDefiQuestion(){
   document.getElementById('defiModeLbl').textContent='🏆 '+phase.label;
   const card=document.getElementById('defiCharCard');card.classList.remove('flip-in');void card.offsetWidth;card.classList.add('flip-in');
   const dir=q._dir;const mainEl=document.getElementById('defiMainChar');const hintEl=document.getElementById('defiHint');const exEl=document.getElementById('defiEx');
-  mainEl.textContent=q.q;mainEl.style.fontSize=q.q.length>10?'24px':q.q.length>5?'36px':'50px';
+  mainEl.textContent=q.q;mainEl.style.fontSize=q.q.length>15?'16px':q.q.length>10?'18px':q.q.length>5?'20px':'24px';
   hintEl.textContent=q.hint||'Que signifie ce mot ?';exEl.textContent=q.ex||'';
   document.getElementById('defiFeedback').textContent='';document.getElementById('defiFeedback').className='feedback';
   document.getElementById('defiNextBtn').className='next-btn';
@@ -1416,53 +1416,27 @@ function speakTranslation() {
     _tradSpeakGoogle(text, lang);
 }
 
-var _tradAudio = null;
-
 function _tradSpeakGoogle(text, lang) {
-    _ssmlSpeak(text, lang);
-}
-
-function _ssmlSpeak(text, lang) {
-    if (_tradAudio) { _tradAudio.pause(); _tradAudio = null; }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
 
-    var svcCode = lang === 'sv' ? 'Astrid' : 'Celine';
-    var url = 'https://api.streamelements.com/kappa/v2/speech?voice=' + svcCode + '&text=' + encodeURIComponent(text);
-    var audio = new Audio(url);
-    _tradAudio = audio;
-    audio.onerror = function() {
-        _tradAudio = null;
-        _tradSpeakGoogleFallback(text, lang);
-    };
-    audio.play().catch(function() {
-        if (_tradAudio === audio) {
-            _tradAudio = null;
-            _tradSpeakGoogleFallback(text, lang);
-        }
-    });
-}
-
-function _tradSpeakGoogleFallback(text, lang) {
-    if (_tradAudio) { _tradAudio.pause(); _tradAudio = null; }
-    var chunks = _splitTextChunks(text, 180);
+    var chunks = _splitTextChunks(text, 200);
     var idx = 0;
-    var doNext = function() {
+
+    function doPlayNext() {
         if (idx >= chunks.length) return;
         var chunk = chunks[idx++];
         var url = 'https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=' + lang + '&q=' + encodeURIComponent(chunk);
         var audio = new Audio(url);
-        _tradAudio = audio;
-        audio.onended = function() { _tradAudio = null; doNext(); };
-        audio.onerror = function() { _tradAudio = null; doNext(); };
-        audio.play().catch(function() { _tradAudio = null; doNext(); });
-    };
-    doNext();
-}
-
-function _showTradVoiceStatus(lang) {
-    if (lang === 'sv') {
-        console.log('[Trad TTS] Fallback activé, voix : ' + (window.speechSynthesis ? speechSynthesis.getVoices().map(function(v){ return v.name; }).join(', ') : 'non disponible'));
+        audio.onended = doPlayNext;
+        audio.onerror = function () {
+            if (idx === 1) _tradSpeakWebSpeech(text, lang === 'sv' ? 'sv-SE' : 'fr-FR');
+        };
+        audio.play().catch(function () {
+            if (idx === 1) _tradSpeakWebSpeech(text, lang === 'sv' ? 'sv-SE' : 'fr-FR');
+        });
     }
+
+    doPlayNext();
 }
 
 function _tradSpeakWebSpeech(text, lang) {
