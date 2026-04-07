@@ -1420,6 +1420,7 @@ function _tradSpeakGoogle(text, lang) {
     // Google Translate TTS (no key, limited to ~200 chars per chunk)
     var chunks = _splitTextChunks(text, 180);
     var idx = 0;
+    var fallbackUsed = false;
     function playNext() {
         if (idx >= chunks.length) return;
         var chunk = chunks[idx++];
@@ -1430,25 +1431,69 @@ function _tradSpeakGoogle(text, lang) {
         var audio = new Audio(url);
         audio.onended = playNext;
         audio.onerror = function() {
-            // Fallback: Web Speech API
+            if (!fallbackUsed) { _showTradVoiceStatus(lang); fallbackUsed = true; }
             _tradSpeakWebSpeech(text, lang === 'sv' ? 'sv-SE' : 'fr-FR');
         };
         audio.play().catch(function() {
+            if (!fallbackUsed) { _showTradVoiceStatus(lang); fallbackUsed = true; }
             _tradSpeakWebSpeech(text, lang === 'sv' ? 'sv-SE' : 'fr-FR');
         });
     }
     playNext();
 }
 
+function _showTradVoiceStatus(lang) {
+    if (lang === 'sv') {
+        var voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+        var hasSv = voices.some(function(v){ return v.lang && v.lang.startsWith('sv'); });
+        var hint = document.getElementById('tradResultHint');
+        if (!hasSv) {
+            hint.textContent = '⚠️ Aucune voix suédoise détectée — la prononciation peut être approximative.';
+            hint.style.color = '#e67e22';
+        } else {
+            var svVoice = voices.find(function(v){ return v.lang && v.lang.startsWith('sv'); });
+            hint.textContent = '🔊 Voix : ' + svVoice.name + ' (' + svVoice.lang + ')';
+            hint.style.color = 'var(--aurora-teal)';
+        }
+    }
+}
+
 function _tradSpeakWebSpeech(text, lang) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    var utt = new SpeechSynthesisUtterance(text);
-    utt.lang = lang;
-    utt.rate = lang === 'sv-SE' ? 0.85 : 0.95;
+
     var voices = window.speechSynthesis.getVoices();
-    var match = voices.find(function(v){ return v.lang.startsWith(lang.split('-')[0]); });
-    if (match) utt.voice = match;
+    var prefix = lang.split('-')[0];
+
+    // Stratégie de sélection : voix native > Google > n'importe quelle voix pour la langue
+    var priority = [
+        function(v){ return v.lang === lang && v.name.includes('Google'); },
+        function(v){ return v.lang === lang && !v.name.includes('Google'); },
+        function(v){ return v.lang.startsWith(lang) && v.name.includes('Google'); },
+        function(v){ return v.lang.startsWith(lang); },
+        function(v){ return v.lang.startsWith(prefix) && v.name.includes('Google'); },
+        function(v){ return v.lang.startsWith(prefix); }
+    ];
+
+    var chosen = null;
+    for (var i = 0; i < priority.length; i++) {
+        chosen = voices.find(priority[i]);
+        if (chosen) break;
+    }
+
+    // Si on ne trouve aucune voix pour la langue cible, NE PAS parler
+    // plutôt que d'utiliser une voix FR/EN qui lirait du suédois
+    if (!chosen || !chosen.lang.startsWith(prefix)) {
+        console.warn('[_tradSpeakWebSpeech] No voice found for ' + lang);
+        return;
+    }
+
+    var utt = new SpeechSynthesisUtterance(text);
+    utt.lang = chosen.lang;
+    utt.voice = chosen;
+    utt.rate = lang === 'sv-SE' ? 0.85 : 0.95;
+    utt.pitch = 1.0;
+    console.log('[TTS] Using voice: ' + chosen.name + ' (' + chosen.lang + ')');
     window.speechSynthesis.speak(utt);
 }
 
