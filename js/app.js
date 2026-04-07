@@ -1417,34 +1417,58 @@ function speakTranslation() {
 }
 
 function _tradSpeakGoogle(text, lang) {
-    // Google Translate TTS (no key, limited to ~200 chars per chunk)
-    var chunks = _splitTextChunks(text, 180);
-    var idx = 0;
-    var fallbackUsed = false;
-    function playNext() {
-        if (idx >= chunks.length) return;
-        var chunk = chunks[idx++];
-        var url = 'https://translate.googleapis.com/translate_tts?ie=UTF-8'
-            + '&client=gtx'
-            + '&tl=' + lang
-            + '&q=' + encodeURIComponent(chunk);
-        var audio = new Audio(url);
-        audio.onended = playNext;
-        audio.onerror = function() {
-            if (!fallbackUsed) { _showTradVoiceStatus(lang); fallbackUsed = true; }
-            _tradSpeakWebSpeech(text, lang === 'sv' ? 'sv-SE' : 'fr-FR');
-        };
-        audio.play().catch(function() {
-            if (!fallbackUsed) { _showTradVoiceStatus(lang); fallbackUsed = true; }
-            _tradSpeakWebSpeech(text, lang === 'sv' ? 'sv-SE' : 'fr-FR');
-        });
+    // Essai 1 : StreamElements TTS (Amazon Polly, gratuit, pas de CORS, fonctionne sur github.io)
+    try {
+        _ssmlSpeak(text, lang);
+    } catch(e) {
+        // Essai 2 : Google Translate TTS (fonctionne en local, parfois bloqué sur github.io)
+        var chunks = _splitTextChunks(text, 180);
+        var idx = 0;
+        var fallbackUsed = false;
+        function playNext() {
+            if (idx >= chunks.length) return;
+            var chunk = chunks[idx++];
+            var url = 'https://translate.googleapis.com/translate_tts?ie=UTF-8'
+                + '&client=gtx'
+                + '&tl=' + lang
+                + '&q=' + encodeURIComponent(chunk);
+            var audio = new Audio(url);
+            audio.onended = playNext;
+            audio.onerror = function() {
+                if (!fallbackUsed) { _showTradVoiceStatus(lang); fallbackUsed = true; }
+                _tradSpeakWebSpeech(text, lang === 'sv' ? 'sv-SE' : 'fr-FR');
+            };
+            audio.play().catch(function() {
+                if (!fallbackUsed) { _showTradVoiceStatus(lang); fallbackUsed = true; }
+                _tradSpeakWebSpeech(text, lang === 'sv' ? 'sv-SE' : 'fr-FR');
+            });
+        }
+        playNext();
     }
-    playNext();
+}
+
+function _ssmlSpeak(text, lang) {
+    var svcCode = lang === 'sv' ? 'Astrid' : lang === 'fr' ? 'Celine';
+    var audio = new Audio(
+        'https://api.streamelements.com/kappa/v2/speech?voice=' + svcCode +
+        '&text=' + encodeURIComponent(text)
+    );
+    audio.onerror = function() {
+        // Si StreamElements échoue aussi, fallback sur SpeechSynthesis
+        _showTradVoiceStatus(lang);
+        _tradSpeakWebSpeech(text, lang === 'sv' ? 'sv-SE' : 'fr-FR');
+    };
+    audio.play().catch(function() {
+        _showTradVoiceStatus(lang);
+        _tradSpeakWebSpeech(text, lang === 'sv' ? 'sv-SE' : 'fr-FR');
+    });
 }
 
 function _showTradVoiceStatus(lang) {
     if (lang === 'sv') {
         var voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+
+
         var hasSv = voices.some(function(v){ return v.lang && v.lang.startsWith('sv'); });
         var hint = document.getElementById('tradResultHint');
         if (!hasSv) {
