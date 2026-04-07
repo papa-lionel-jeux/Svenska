@@ -1419,19 +1419,16 @@ function speakTranslation() {
 var _tradAudio = null;
 
 function _tradSpeakGoogle(text, lang) {
-    // StreamElements TTS (Amazon Polly, gratuit, pas de CORS, fonctionne sur github.io)
     _ssmlSpeak(text, lang);
 }
 
 function _ssmlSpeak(text, lang) {
     if (_tradAudio) { _tradAudio.pause(); _tradAudio = null; }
-    window.speechSynthesis && window.speechSynthesis.cancel();
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
 
     var svcCode = lang === 'sv' ? 'Astrid' : 'Celine';
-    var audio = new Audio(
-        'https://api.streamelements.com/kappa/v2/speech?voice=' + svcCode +
-        '&text=' + encodeURIComponent(text)
-    );
+    var url = 'https://api.streamelements.com/kappa/v2/speech?voice=' + svcCode + '&text=' + encodeURIComponent(text);
+    var audio = new Audio(url);
     _tradAudio = audio;
     audio.onerror = function() {
         _tradAudio = null;
@@ -1446,39 +1443,25 @@ function _ssmlSpeak(text, lang) {
 }
 
 function _tradSpeakGoogleFallback(text, lang) {
+    if (_tradAudio) { _tradAudio.pause(); _tradAudio = null; }
     var chunks = _splitTextChunks(text, 180);
     var idx = 0;
-    function playNext() {
+    var doNext = function() {
         if (idx >= chunks.length) return;
         var chunk = chunks[idx++];
-        var url = 'https://translate.googleapis.com/translate_tts?ie=UTF-8'
-            + '&client=gtx'
-            + '&tl=' + lang
-            + '&q=' + encodeURIComponent(chunk);
+        var url = 'https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=' + lang + '&q=' + encodeURIComponent(chunk);
         var audio = new Audio(url);
         _tradAudio = audio;
-        audio.onended = function() { _tradAudio = null; playNext(); };
-        audio.onerror = function() { _tradAudio = null; playNext(); };
-        audio.play().catch(function() { _tradAudio = null; playNext(); });
-    }
-    playNext();
+        audio.onended = function() { _tradAudio = null; doNext(); };
+        audio.onerror = function() { _tradAudio = null; doNext(); };
+        audio.play().catch(function() { _tradAudio = null; doNext(); });
+    };
+    doNext();
 }
 
 function _showTradVoiceStatus(lang) {
     if (lang === 'sv') {
-        var voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
-
-
-        var hasSv = voices.some(function(v){ return v.lang && v.lang.startsWith('sv'); });
-        var hint = document.getElementById('tradResultHint');
-        if (!hasSv) {
-            hint.textContent = '⚠️ Aucune voix suédoise détectée — la prononciation peut être approximative.';
-            hint.style.color = '#e67e22';
-        } else {
-            var svVoice = voices.find(function(v){ return v.lang && v.lang.startsWith('sv'); });
-            hint.textContent = '🔊 Voix : ' + svVoice.name + ' (' + svVoice.lang + ')';
-            hint.style.color = 'var(--aurora-teal)';
-        }
+        console.log('[Trad TTS] Fallback activé, voix : ' + (window.speechSynthesis ? speechSynthesis.getVoices().map(function(v){ return v.name; }).join(', ') : 'non disponible'));
     }
 }
 
