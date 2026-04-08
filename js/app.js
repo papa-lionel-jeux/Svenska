@@ -286,8 +286,10 @@ function updateMenuStats(){
   CATS_VOCAB.forEach(cat=>{
     const btn=document.createElement('div');
     btn.className='mode-card';btn.style.cssText='padding:5px 4px;min-height:0;cursor:pointer';
-    btn.innerHTML=`<span style="font-size:22px;display:block;margin-bottom:2px">${catEmojis[cat]||'📂'}</span><h3 style="font-size:13px;line-height:1.2">${cat}</h3>`;
+    btn.innerHTML=`<span style="font-size:22px;display:block;margin-bottom:2px">${catEmojis[cat]||'📂'}</span><h3 style="font-size:13px;line-height:1.2">${cat}</h3><button class="learn-mini-btn">📖 Apprendre</button>`;
     btn.onclick=()=>chooseDirScreen('cat_'+cat);
+    const learnBtn=btn.querySelector('.learn-mini-btn');
+    learnBtn.addEventListener('click',function(e){e.stopPropagation();startLearn(cat);});
     cg.appendChild(btn);
   });
 }
@@ -1534,4 +1536,96 @@ function _esc(s) {
 if (window.speechSynthesis) {
     window.speechSynthesis.getVoices();
     window.speechSynthesis.onvoiceschanged = function() { window.speechSynthesis.getVoices(); };
+}
+
+// ══════════════════════════════════════════════════════════
+// MODE APPRENDRE — Exploration par catégorie
+// ══════════════════════════════════════════════════════════
+
+let _learnCat = '';
+let _learnDir = 'sv';
+let _learnRevealTimer = null;
+
+function _learnGetEmoji(item) {
+  const match = item.a.match(/^(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u);
+  return match ? match[0] : '📖';
+}
+
+function _learnGetFrText(item) {
+  return item.a.replace(/^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{2700}-\u{27BF}][\uFE0F]?\s*/u, '').trim();
+}
+
+function startLearn(cat) {
+  _learnCat = cat;
+  const catEmojis = {'Nature':'🌿','Animaux':'🐾','Saisons':'🗓️','Nourriture':'🍽️','Famille':'👨‍👩‍👧','Lieux':'🏙️','Couleurs':'🎨','Chiffres':'🔢','Émotions':'😀','Vêtements':'👗','Expressions':'💬','Présentations':'🙋','Communication':'🗣️','Verbes':'🔤'};
+  const emoji = catEmojis[_learnCat] || '📂';
+  document.getElementById('learnCatTitle').textContent = emoji + ' ' + _learnCat;
+  showScreen('learnDirScreen');
+}
+
+function startLearnMode(dir) {
+  _learnDir = dir;
+  _renderLearnScreen();
+  showScreen('learnScreen');
+}
+
+function _renderLearnScreen() {
+  const catEmojis = {'Nature':'🌿','Animaux':'🐾','Saisons':'🗓️','Nourriture':'🍽️','Famille':'👨‍👩‍👧','Lieux':'🏙️','Couleurs':'🎨','Chiffres':'🔢','Émotions':'😀','Vêtements':'👗','Expressions':'💬','Présentations':'🙋','Communication':'🗣️','Verbes':'🔤'};
+  const items = VOCAB.filter(v => v.cat === _learnCat);
+  const emoji = catEmojis[_learnCat] || '📂';
+  const dir = _learnDir;
+
+  document.getElementById('learnScreenTitle').textContent = emoji + ' ' + _learnCat;
+  document.getElementById('learnDirLabel').textContent = dir === 'sv'
+    ? '🇸🇪 Suédois → clique pour voir en français'
+    : '🇫🇷 Français → clique pour voir en suédois';
+
+  const grid = document.getElementById('learnGrid');
+  grid.innerHTML = '';
+
+  items.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'learn-card';
+    card.dataset.idx = idx;
+
+    const emojiChar = _learnGetEmoji(item);
+    const frText = _learnGetFrText(item);
+    const svText = item.q;
+
+    if (dir === 'sv') {
+      card.innerHTML = `
+        <div class="learn-card-emoji">${emojiChar}</div>
+        <div class="learn-card-main">${svText}</div>
+        <div class="learn-card-reveal" style="opacity:0;transition:opacity .2s">${frText}</div>
+        <button class="learn-speak-btn" onclick="event.stopPropagation();speak('${svText.replace(/'/g,"\\'")}')">🔊</button>
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="learn-card-emoji">${emojiChar}</div>
+        <div class="learn-card-main">${frText}</div>
+        <div class="learn-card-reveal" style="opacity:0;transition:opacity .2s">${svText}</div>
+        <button class="learn-speak-btn" onclick="event.stopPropagation();speak('${svText.replace(/'/g,"\\'")}')">🔊</button>
+      `;
+    }
+
+    card.addEventListener('click', function(e) {
+      if (e.target.classList.contains('learn-speak-btn')) return;
+      _learnRevealWord(card, svText);
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+function _learnRevealWord(card, svText) {
+  const reveal = card.querySelector('.learn-card-reveal');
+  if (!reveal) return;
+  speak(svText);
+  reveal.style.opacity = '1';
+  card.classList.add('learn-card-revealed');
+  clearTimeout(_learnRevealTimer);
+  _learnRevealTimer = setTimeout(function() {
+    reveal.style.opacity = '0';
+    card.classList.remove('learn-card-revealed');
+  }, 2000);
 }

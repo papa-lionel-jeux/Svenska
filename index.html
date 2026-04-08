@@ -99,6 +99,36 @@ body{min-height:100vh;height:100%;background:linear-gradient(160deg,#0d2137 0%,#
 .defi-done-badge{position:absolute;top:5px;right:5px;background:rgba(30,106,58,.85);color:#fff;font-size:8px;font-weight:700;padding:1px 6px;border-radius:8px;border:1px solid rgba(82,190,128,.5)}
 .defi-streak-badge{position:absolute;bottom:5px;right:6px;font-size:9px;font-weight:700;color:var(--gold);text-shadow:0 1px 2px rgba(0,0,0,.4)}
 
+/* ── MODE APPRENDRE ── */
+.learn-mini-btn{margin-top:4px;background:linear-gradient(135deg,rgba(82,190,128,.22),rgba(26,188,156,.18));border:1px solid rgba(82,190,128,.45);border-radius:8px;color:var(--aurora-green);font-size:9px;font-weight:700;padding:3px 6px;cursor:pointer;font-family:inherit;transition:all .15s;width:calc(100% - 2px);letter-spacing:.3px}
+.learn-mini-btn:hover{background:rgba(82,190,128,.35);transform:scale(1.03)}
+
+.learn-dir-screen{display:flex;flex-direction:column;align-items:center;padding:1rem .5rem;gap:14px}
+.learn-dir-screen h2{font-size:clamp(15px,4vw,20px);font-weight:900;color:var(--snow);text-align:center}
+.learn-dir-screen p{font-size:12px;color:var(--text-muted);text-align:center}
+.learn-dir-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:340px}
+.learn-dir-card{background:rgba(26,188,156,.12);border:2px solid rgba(46,204,113,.3);border-radius:14px;padding:16px 10px;cursor:pointer;text-align:center;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:6px}
+.learn-dir-card:hover{border-color:var(--aurora-green);background:rgba(82,190,128,.15);transform:translateY(-2px)}
+.learn-dir-card-icon{font-size:32px}
+.learn-dir-card h3{font-size:13px;font-weight:700;color:var(--snow)}
+.learn-dir-card p{font-size:10px;color:var(--text-muted);line-height:1.4}
+
+#learnScreen{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:12px}
+.learn-screen-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-shrink:0}
+.learn-screen-header h2{font-size:clamp(14px,4vw,18px);font-weight:900;color:var(--snow);flex:1}
+.learn-dir-lbl{font-size:10px;color:var(--text-muted);margin-bottom:8px;text-align:center;font-style:italic;flex-shrink:0}
+
+.learn-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+
+.learn-card{background:linear-gradient(135deg,rgba(26,82,118,.55),rgba(13,33,55,.75));border:1.5px solid rgba(46,134,193,.3);border-radius:12px;padding:10px 8px 8px;cursor:pointer;text-align:center;transition:all .15s;position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:80px;user-select:none}
+.learn-card:hover{border-color:var(--aurora-green);background:linear-gradient(135deg,rgba(82,190,128,.15),rgba(26,188,156,.1));transform:translateY(-1px)}
+.learn-card.learn-card-revealed{border-color:var(--aurora-green);box-shadow:0 0 12px rgba(82,190,128,.2)}
+.learn-card-emoji{font-size:22px;line-height:1;flex-shrink:0}
+.learn-card-main{font-size:clamp(12px,3.5vw,15px);font-weight:700;color:var(--snow);line-height:1.2;word-break:break-word}
+.learn-card-reveal{font-size:clamp(11px,3vw,13px);font-weight:600;color:var(--aurora-green);min-height:16px;line-height:1.2;word-break:break-word;pointer-events:none}
+.learn-speak-btn{background:none;border:none;font-size:14px;cursor:pointer;opacity:.6;padding:2px;line-height:1;margin-top:auto;transition:opacity .15s}
+.learn-speak-btn:hover{opacity:1}
+
 /* ── DIRECTION PICKER ── */
 .dir-screen{text-align:center}
 .dir-title{font-size:clamp(13px,4vw,16px);font-weight:700;color:var(--snow);margin-bottom:.3rem}
@@ -1220,6 +1250,38 @@ body{min-height:100vh;height:100%;background:linear-gradient(160deg,#0d2137 0%,#
     </div>
 
   </div>
+</div>
+
+<!-- CHOIX DIRECTION — APPRENDRE -->
+<div id="learnDirScreen" class="screen">
+  <button class="btn-back" onclick="goMenu()">← Retour menu</button>
+  <div class="learn-dir-screen">
+    <h2 id="learnCatTitle">📂 Catégorie</h2>
+    <p>Comment veux-tu apprendre ?</p>
+    <div class="learn-dir-grid">
+      <div class="learn-dir-card" onclick="startLearnMode('sv')">
+        <div class="learn-dir-card-icon">🇸🇪</div>
+        <h3>Suédois</h3>
+        <p>Vois le mot suédois, clique pour révéler le français</p>
+      </div>
+      <div class="learn-dir-card" onclick="startLearnMode('fr')">
+        <div class="learn-dir-card-icon">🇫🇷</div>
+        <h3>Français</h3>
+        <p>Vois le mot français, clique pour révéler le suédois</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ÉCRAN APPRENDRE -->
+<div id="learnScreen" class="screen">
+  <div class="learn-screen-header">
+    <button class="btn-back" style="margin-bottom:0" onclick="showScreen('learnDirScreen')">←</button>
+    <h2 id="learnScreenTitle">📂 Catégorie</h2>
+    <button class="btn-back" style="margin-bottom:0;margin-left:auto" onclick="goMenu()">Menu</button>
+  </div>
+  <div class="learn-dir-lbl" id="learnDirLabel"></div>
+  <div class="learn-grid" id="learnGrid"></div>
 </div>
 
 </div><!-- .game -->
