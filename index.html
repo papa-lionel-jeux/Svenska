@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Lär dig svenska</title>
+
+<!-- ── PWA ── -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Svenska">
+<meta name="theme-color" content="#1a3a5c">
+<meta name="description" content="Apprenez le suédois : prononciation, vocabulaire et phrases">
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIkxcdTAwZTRyIGRpZyBzdmVuc2thIiwgInNob3J0X25hbWUiOiAiU3ZlbnNrYSIsICJkZXNjcmlwdGlvbiI6ICJBcHByZW5leiBsZSBzdVx1MDBlOWRvaXMgOiBwcm9ub25jaWF0aW9uLCB2b2NhYnVsYWlyZSBldCBwaHJhc2VzIiwgInN0YXJ0X3VybCI6ICIuIiwgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMxYTNhNWMiLCAidGhlbWVfY29sb3IiOiAiIzFhM2E1YyIsICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdCIsICJpY29ucyI6IFtdfQ==">
+<link rel="apple-touch-icon" href="icon-sv-192.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue-deep:#0d2137;--blue-mid:#1a5276;--blue-light:#2e86c1;
+  --blue-pale:#d6eaf8;--blue-bg:rgba(20,50,80,.9);
+  --aurora-green:#52be80;--aurora-teal:#1abc9c;--aurora-purple:#8e44ad;
+  --red-falun:#8b1a1a;--red-light:#c0392b;
+  --snow:#f0f4f8;--snow-white:#ffffff;
+  --green-forest:#1e6a3a;--green-light:#27ae60;
+  --green-ok:#1e6a3a;--green-bg:#d5f5e3;
+  --red-err:#922b21;--red-bg:#fadbd8;
+  --text-dark:#0d2137;--text-muted:#5d8aa8;
+  --gold:#f1c40f;--gold-light:#f9e79f;
+}
+body{min-height:100vh;height:100%;background:linear-gradient(160deg,#0d2137 0%,#1a3a5c 45%,#0a1628 100%);display:flex;align-items:flex-start;justify-content:center;padding:0;position:relative;overflow-x:hidden;font-family:'Nunito','Segoe UI',sans-serif}
+
+/* Neige qui tombe */
+#snowflakes{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+.snowflake{position:absolute;top:-20px;opacity:0;animation:snowFall linear infinite;color:#ffffff;font-size:12px;user-select:none}
+@keyframes snowFall{0%{transform:translateY(0) rotate(0deg) translateX(0);opacity:0}8%{opacity:.7}80%{opacity:.4}100%{transform:translateY(105vh) rotate(360deg) translateX(40px);opacity:0}}
+
+/* Aurores boréales en fond */
+.aurora{position:fixed;top:0;left:0;width:100%;height:50%;pointer-events:none;z-index:0;opacity:.5}
+
+.game{position:relative;z-index:1;max-width:500px;width:100%;background:rgba(13,33,55,.55);border-radius:0;height:auto;overflow-y:auto;padding:max(env(safe-area-inset-top),8px) 10px 16px;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.5);border:1px solid rgba(46,134,193,.15)}
+.game>*{position:relative;z-index:1}
+
+@media(min-width:520px){
+  body{padding:1rem;align-items:center}
+  .game{height:auto;min-height:auto;max-height:calc(100dvh - 2rem);overflow-y:auto;border-radius:20px;padding:1rem 1rem 0}
+}
+
+/* Paysage intégré dans le menu */
+.menu-landscape{flex-shrink:0;width:calc(100% + 20px);margin-left:-10px;margin-right:-10px;margin-bottom:0;height:220px;overflow:hidden;position:relative;margin-top:auto}
+.menu-landscape svg{width:100%;height:100%;display:block}
+@media(min-width:520px){.menu-landscape{width:calc(100% + 2rem);margin-left:-1rem;margin-right:-1rem;border-radius:0 0 20px 20px}}
+
+.screen{display:none}
+.screen.active{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+#quizScreen,#resultsScreen,#dirScreen,#reconstructScreen,#reconstructDirScreen,#defiScreen,#defiResultScreen{overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+.sound-toggle{position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:20px;cursor:pointer;opacity:.6;z-index:2;padding:2px;color:#fff}
+.sound-toggle:hover{opacity:1}
+
+/* ── MENU ── */
+#menuScreen.active{overflow:hidden;display:flex;flex-direction:column}
+@media(max-height:699px){#menuScreen{overflow-y:auto;-webkit-overflow-scrolling:touch}}
+
+.game-title{flex-shrink:0;text-align:center;margin-bottom:0;padding-bottom:0;padding-top:2px}
+.game-title svg{display:none}
+.game-title h1{font-size:clamp(14px,3.5vw,18px);font-weight:900;color:var(--snow);letter-spacing:.5px;text-shadow:0 0 20px rgba(82,190,128,.4)}
+.game-title p{font-size:clamp(9px,2.2vw,11px);color:var(--text-muted);margin-top:1px}
+.game-title::after{content:'';display:block;width:50px;height:2px;background:linear-gradient(90deg,transparent,var(--aurora-green),transparent);margin:.3rem auto 0;border-radius:1px}
+
+.streak-banner{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,rgba(82,190,128,.15),rgba(26,188,156,.1));border:1px solid rgba(82,190,128,.3);border-radius:10px;padding:4px 10px;margin-top:4px;font-size:11px;color:var(--aurora-green);font-weight:700;animation:fadeIn .4s ease}
+.streak-banner.hidden{display:none}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+.global-progress{flex-shrink:0;margin-top:4px;margin-bottom:0}
+.global-progress-label{font-size:9px;color:var(--text-muted);display:flex;justify-content:space-between;margin-bottom:3px}
+.global-bar{height:4px;background:rgba(255,255,255,.1);border-radius:3px}
+.global-fill{height:100%;background:linear-gradient(90deg,var(--aurora-green),var(--aurora-teal));border-radius:3px;transition:width .6s ease}
+
+.mode-grid{flex-shrink:0;margin-top:5px;margin-bottom:0;display:grid;grid-template-columns:1fr 1fr;gap:4px;align-content:start}
+.mode-card{background:rgba(26,188,156,.12);border:1.5px solid rgba(46,204,113,.3);border-radius:9px;padding:7px 8px;cursor:pointer;text-align:center;transition:all .15s;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0}
+.mode-card:hover{border-color:var(--blue-light);background:rgba(46,134,193,.25);transform:translateY(-1px);box-shadow:0 3px 12px rgba(82,190,128,.15)}
+.mode-card.draw-card{grid-column:1/-1;flex-direction:row;align-items:center;gap:10px;text-align:left;border-color:rgba(82,190,128,.3);background:rgba(26,188,156,.08);padding:0 12px}
+.mode-card.draw-card:hover{background:rgba(82,190,128,.15)}
+.mode-jp{font-size:clamp(16px,4vw,22px);display:block;margin-bottom:1px;line-height:1}
+.draw-card .mode-jp{margin-bottom:0;font-size:clamp(20px,5vw,26px)}
+.mode-card h3{font-size:clamp(10px,2.5vw,13px);font-weight:700;color:var(--snow);line-height:1.2}
+.mode-card p{font-size:clamp(8px,2vw,10px);color:var(--text-muted);margin-top:1px;line-height:1.2}
+.mastery-badge{position:absolute;top:4px;right:4px;font-size:8px;font-weight:700;padding:1px 4px;border-radius:8px;background:rgba(82,190,128,.15);color:var(--aurora-green);border:1px solid rgba(82,190,128,.3)}
+
+/* Défi card */
+.defi-card{grid-column:1/-1;background:linear-gradient(135deg,#0d2137,#1a5276);border:1.5px solid rgba(82,190,128,.4)!important;border-radius:9px;padding:6px 10px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;position:relative;overflow:hidden;transition:all .15s;box-shadow:0 3px 14px rgba(0,0,0,.3)}
+.defi-card:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(82,190,128,.2)}
+.defi-card .mode-jp{font-size:clamp(18px,4.5vw,24px);flex-shrink:0;margin-bottom:0}
+.defi-card h3{font-size:clamp(11px,3vw,13px);font-weight:700;color:var(--snow)}
+.defi-card p{font-size:clamp(8px,2vw,10px);color:rgba(180,210,240,.8);margin-top:1px}
+.defi-card .defi-shine{position:absolute;top:0;right:0;width:120px;height:100%;background:linear-gradient(135deg,transparent,rgba(82,190,128,.06));pointer-events:none}
+.defi-done-badge{position:absolute;top:5px;right:5px;background:rgba(30,106,58,.85);color:#fff;font-size:8px;font-weight:700;padding:1px 6px;border-radius:8px;border:1px solid rgba(82,190,128,.5)}
+.defi-streak-badge{position:absolute;bottom:5px;right:6px;font-size:9px;font-weight:700;color:var(--gold);text-shadow:0 1px 2px rgba(0,0,0,.4)}
+
+/* ── MODE APPRENDRE ── */
+.learn-mini-btn{margin-top:4px;background:linear-gradient(135deg,rgba(82,190,128,.22),rgba(26,188,156,.18));border:1px solid rgba(82,190,128,.45);border-radius:8px;color:var(--aurora-green);font-size:9px;font-weight:700;padding:3px 6px;cursor:pointer;font-family:inherit;transition:all .15s;width:calc(100% - 2px);letter-spacing:.3px}
+.learn-mini-btn:hover{background:rgba(82,190,128,.35);transform:scale(1.03)}
+
+.learn-dir-screen{display:flex;flex-direction:column;align-items:center;padding:1rem .5rem;gap:14px}
+.learn-dir-screen h2{font-size:clamp(15px,4vw,20px);font-weight:900;color:var(--snow);text-align:center}
+.learn-dir-screen p{font-size:12px;color:var(--text-muted);text-align:center}
+.learn-dir-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:340px}
+.learn-dir-card{background:rgba(26,188,156,.12);border:2px solid rgba(46,204,113,.3);border-radius:14px;padding:16px 10px;cursor:pointer;text-align:center;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:6px}
+.learn-dir-card:hover{border-color:var(--aurora-green);background:rgba(82,190,128,.15);transform:translateY(-2px)}
+.learn-dir-card-icon{font-size:32px}
+.learn-dir-card h3{font-size:13px;font-weight:700;color:var(--snow)}
+.learn-dir-card p{font-size:10px;color:var(--text-muted);line-height:1.4}
+
+#learnScreen{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:12px}
+.learn-screen-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-shrink:0}
+.learn-screen-header h2{font-size:clamp(14px,4vw,18px);font-weight:900;color:var(--snow);flex:1}
+.learn-dir-lbl{font-size:10px;color:var(--text-muted);margin-bottom:8px;text-align:center;font-style:italic;flex-shrink:0}
+
+.learn-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+
+.learn-card{background:linear-gradient(135deg,rgba(26,82,118,.55),rgba(13,33,55,.75));border:1.5px solid rgba(46,134,193,.3);border-radius:12px;padding:10px 8px 8px;cursor:pointer;text-align:center;transition:all .15s;position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:80px;user-select:none}
+.learn-card:hover{border-color:var(--aurora-green);background:linear-gradient(135deg,rgba(82,190,128,.15),rgba(26,188,156,.1));transform:translateY(-1px)}
+.learn-card.learn-card-revealed{border-color:var(--aurora-green);box-shadow:0 0 12px rgba(82,190,128,.2)}
+.learn-card-emoji{font-size:22px;line-height:1;flex-shrink:0}
+.learn-card-main{font-size:clamp(12px,3.5vw,15px);font-weight:700;color:var(--snow);line-height:1.2;word-break:break-word}
+.learn-card-reveal{font-size:clamp(11px,3vw,13px);font-weight:600;color:var(--aurora-green);min-height:16px;line-height:1.2;word-break:break-word;pointer-events:none}
+.learn-speak-btn{background:none;border:none;font-size:14px;cursor:pointer;opacity:.6;padding:2px;line-height:1;margin-top:auto;transition:opacity .15s}
+.learn-speak-btn:hover{opacity:1}
+
+/* ── DIRECTION PICKER ── */
+.dir-screen{text-align:center}
+.dir-title{font-size:clamp(13px,4vw,16px);font-weight:700;color:var(--snow);margin-bottom:.3rem}
+.dir-subtitle{font-size:clamp(10px,2.5vw,12px);color:var(--text-muted);margin-bottom:clamp(8px,2vh,16px)}
+.dir-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(6px,2vw,12px);margin-bottom:clamp(6px,1.5vh,12px)}
+.dir-card{background:rgba(26,188,156,.12);border:2px solid rgba(46,204,113,.25);border-radius:14px;padding:clamp(10px,2.5vh,18px) clamp(8px,2vw,12px);cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.dir-card:hover{border-color:var(--aurora-green);background:rgba(82,190,128,.1);transform:translateY(-2px)}
+.dir-card.selected{border-color:var(--aurora-green);background:rgba(82,190,128,.15)}
+.dir-card-icon{font-size:clamp(22px,6vw,34px);display:block;margin-bottom:clamp(2px,.5vh,6px)}
+.dir-card h3{font-size:clamp(11px,3vw,13px);font-weight:700;color:var(--snow);margin-bottom:4px}
+.dir-card p{font-size:clamp(9px,2.5vw,11px);color:var(--text-muted);line-height:1.4}
+.dir-card-badge{position:absolute;top:8px;right:8px;font-size:16px}
+.dir-random{grid-column:1/-1;display:flex;align-items:center;gap:.8rem;text-align:left;padding:.9rem 1rem}
+.dir-random .dir-card-icon{font-size:26px;margin:0;flex-shrink:0}
+
+/* ── QUIZ HEADER ── */
+.quiz-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:clamp(4px,1vh,10px);gap:6px;flex-shrink:0}
+.quiz-mode-lbl{font-size:clamp(11px,3vw,13px);color:var(--text-muted);font-weight:600}
+.lives{display:flex;gap:3px;font-size:clamp(14px,4vw,16px)}
+.score-lbl{font-size:clamp(12px,3vw,13px);font-weight:700;color:var(--aurora-green)}
+.streak-display{display:flex;align-items:center;gap:3px;font-size:12px;font-weight:700;color:var(--gold);display:none}
+.streak-display.fire{animation:streakPop .4s cubic-bezier(.36,.07,.19,.97)}
+@keyframes streakPop{0%{transform:scale(1)}40%{transform:scale(1.4)}70%{transform:scale(.9)}100%{transform:scale(1)}}
+.progress-bar{height:5px;background:rgba(255,255,255,.1);border-radius:3px;margin-bottom:clamp(6px,1.5vh,14px);overflow:hidden;flex-shrink:0}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--aurora-green),var(--aurora-teal));border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* ── CARTE QUESTION ── */
+.char-card-wrap{perspective:800px;margin-bottom:clamp(6px,1.5vh,12px);flex-shrink:0}
+.char-card{background:linear-gradient(135deg,rgba(26,82,118,.5),rgba(13,33,55,.7));border:1.5px solid rgba(46,134,193,.3);border-radius:16px;padding:clamp(8px,2vh,20px) clamp(10px,3vw,20px) clamp(6px,1.5vh,14px);text-align:center;position:relative}
+.main-char{font-size:clamp(20px,6vw,28px)!important;line-height:1.15;color:var(--snow);display:block;transition:transform .2s;pointer-events:none;user-select:none;font-weight:900;word-break:break-word;overflow-wrap:break-word;width:100%;}
+.speak-btn{background:rgba(82,190,128,.15);border:1px solid rgba(82,190,128,.35);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--aurora-green);cursor:pointer;font-family:inherit;transition:all .15s;display:inline-block;margin:0 auto}
+.speak-btn:hover{background:rgba(82,190,128,.3)}
+
+/* ── OPTIONS ── */
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(5px,1.5vw,8px);margin-bottom:clamp(4px,1vh,10px);flex-shrink:0}
+.opt{background:linear-gradient(135deg,rgba(26,82,118,.7),rgba(20,60,100,.9));border:1.5px solid rgba(46,134,193,.4);border-radius:10px;padding:clamp(8px,2vh,13px) clamp(6px,2vw,10px);cursor:pointer;font-size:clamp(13px,3.5vw,16px);font-weight:700;color:var(--snow);transition:all .12s;text-align:center;font-family:inherit}
+.opt:hover:not(:disabled){background:linear-gradient(135deg,rgba(82,190,128,.2),rgba(26,188,156,.15));border-color:var(--aurora-green);transform:translateY(-1px)}
+.opt.correct{background:var(--green-bg);border-color:#27ae60;color:#1e6a3a;animation:correctPop .35s cubic-bezier(.36,.07,.19,.97)}
+@keyframes correctPop{0%{transform:scale(1)}40%{transform:scale(1.07)}100%{transform:scale(1)}}
+.opt.wrong{background:var(--red-bg);border-color:#c0392b;color:#922b21;animation:shake .3s}
+@keyframes shake{0%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}100%{transform:translateX(0)}}
+.opt:disabled{cursor:default}
+.feedback{text-align:center;font-size:clamp(11px,3vw,13px);font-weight:600;min-height:16px;margin-bottom:clamp(3px,1vh,8px);flex-shrink:0}
+.feedback.good{color:var(--aurora-green)}.feedback.bad{color:#e74c3c}.feedback.info{color:var(--text-muted)}
+
+/* ── COMBO ── */
+.combo-flash{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.5);font-size:32px;font-weight:900;color:var(--aurora-green);pointer-events:none;z-index:100;opacity:0;text-shadow:0 2px 12px rgba(82,190,128,.5)}
+.combo-flash.show{animation:comboAnim .7s cubic-bezier(.36,.07,.19,.97) forwards}
+@keyframes comboAnim{0%{transform:translate(-50%,-50%) scale(.5);opacity:0}30%{transform:translate(-50%,-50%) scale(1.2);opacity:1}70%{transform:translate(-50%,-50%) scale(1.1);opacity:.9}100%{transform:translate(-50%,-70%) scale(.8);opacity:0}}
+
+/* ── BOUTONS ── */
+.next-btn{display:none;width:100%;padding:clamp(8px,2vh,12px);background:linear-gradient(135deg,var(--blue-mid),var(--blue-deep));color:var(--snow);border:1px solid rgba(82,190,128,.3);border-radius:10px;font-size:clamp(12px,3.5vw,14px);font-weight:700;cursor:pointer;margin-top:4px;font-family:inherit;transition:all .15s}
+.next-btn:hover{opacity:.88;transform:translateY(-1px)}.next-btn.show{display:block}
+.btn-red{display:block;width:100%;padding:clamp(8px,2vh,12px);background:linear-gradient(135deg,var(--blue-mid),var(--blue-deep));color:var(--snow);border:1px solid rgba(82,190,128,.3);border-radius:10px;font-size:clamp(12px,3.5vw,14px);font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-red:hover:not(:disabled){opacity:.88;transform:translateY(-1px)}.btn-red:disabled{opacity:.45;cursor:not-allowed}
+.btn-ghost{display:block;width:100%;padding:clamp(8px,2vh,12px);background:rgba(26,188,156,.1);color:var(--text-muted);border:1.5px solid rgba(46,134,193,.3);border-radius:10px;font-size:clamp(12px,3.5vw,14px);cursor:pointer;margin-top:8px;font-family:inherit;transition:all .15s}
+.btn-ghost:hover{background:rgba(46,134,193,.2);color:var(--snow);transform:translateY(-1px)}
+.btn-back{display:inline-flex;align-items:center;gap:5px;background:rgba(26,188,156,.12);color:#fff;border:1.5px solid rgba(46,204,113,.3);border-radius:20px;padding:5px 14px;font-size:clamp(11px,3vw,12px);font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:8px;align-self:flex-start}
+.btn-back:hover{background:rgba(26,188,156,.25);transform:translateX(-2px)}
+.hint-toggle{display:block;width:100%;background:none;border:none;font-size:12px;color:var(--text-muted);cursor:pointer;padding:.4rem;text-align:center;margin-top:4px;font-family:inherit}
+
+/* ── RECONSTRUIRE ── */
+.reconstruct-zone{background:rgba(26,82,118,.2);border:2px dashed rgba(46,134,193,.3);border-radius:14px;padding:clamp(6px,1.5vh,12px);margin-bottom:clamp(5px,1.5vh,10px);min-height:clamp(40px,8vh,70px);display:flex;align-items:center;justify-content:center}
+.reconstruct-slots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;min-height:36px;width:100%}
+.slot-word{background:linear-gradient(135deg,var(--blue-light),var(--blue-mid));border:1.5px solid rgba(82,190,128,.4);border-radius:8px;padding:clamp(4px,1vh,7px) clamp(7px,2vw,12px);font-size:clamp(12px,3.5vw,15px);font-weight:700;color:#fff;cursor:pointer;transition:all .12s;font-family:inherit}
+.slot-word:hover{background:linear-gradient(135deg,var(--aurora-green),var(--aurora-teal));transform:translateY(-1px)}
+.word-bank{display:flex;flex-wrap:wrap;gap:clamp(4px,1.5vw,8px);justify-content:center;padding:clamp(4px,1vh,8px) 0 clamp(6px,1.5vh,12px);margin-bottom:.25rem}
+.bank-word{background:rgba(26,82,118,.5);border:2px solid rgba(46,134,193,.4);border-radius:10px;padding:clamp(5px,1.5vh,9px) clamp(8px,2.5vw,14px);font-size:clamp(12px,3.5vw,15px);font-weight:700;color:var(--snow);cursor:pointer;transition:all .12s;font-family:inherit}
+.bank-word:hover:not(.used){background:linear-gradient(135deg,var(--aurora-green),var(--aurora-teal));color:#fff;transform:translateY(-2px);box-shadow:0 4px 12px rgba(82,190,128,.3)}
+.bank-word.used{opacity:.22;cursor:default;pointer-events:none;transform:none}
+.word-bank-label{font-size:clamp(9px,2.5vw,11px);color:var(--text-muted);text-align:center;margin-bottom:6px}
+
+/* ── RÉSULTATS ── */
+.results{text-align:center;padding:.25rem 0}
+.result-emoji{font-size:clamp(30px,8vw,46px);margin-bottom:clamp(4px,1.5vh,10px);animation:bounceIn .5s cubic-bezier(.36,.07,.19,.97)}
+@keyframes bounceIn{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+.score-circle{width:clamp(75px,18vw,110px);height:clamp(75px,18vw,110px);border:3px solid var(--aurora-green);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto clamp(8px,2vh,16px);background:rgba(26,82,118,.3);animation:circleGrow .6s cubic-bezier(.4,0,.2,1)}
+@keyframes circleGrow{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.big-score{font-size:clamp(22px,6vw,34px);font-weight:700;color:var(--aurora-green)}
+.score-total{font-size:12px;color:var(--text-muted)}
+.result-msg{font-size:clamp(16px,5vw,22px);font-weight:700;color:var(--snow);margin-bottom:4px}
+.result-sub{font-size:clamp(11px,3vw,13px);color:var(--text-muted);margin-bottom:clamp(8px,2vh,16px)}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(5px,1.5vw,10px);margin-bottom:clamp(8px,2vh,16px)}
+.stat-box{background:rgba(26,82,118,.3);border:1px solid rgba(46,134,193,.2);border-radius:10px;padding:.75rem .5rem}
+.stat-val{font-size:clamp(18px,5vw,24px);font-weight:700;color:var(--aurora-green)}
+.stat-lbl{font-size:clamp(9px,2.5vw,11px);color:var(--text-muted);margin-top:2px}
+.perf-chart{margin-bottom:clamp(8px,2vh,16px)}
+.perf-chart h4{font-size:12px;color:var(--text-muted);margin-bottom:8px}
+.perf-bars{display:flex;align-items:flex-end;gap:3px;height:56px;padding:0 2px}
+.perf-bar{flex:1;border-radius:3px 3px 0 0;min-height:4px;transition:height .7s cubic-bezier(.4,0,.2,1)}
+.perf-bar.ok{background:linear-gradient(180deg,var(--aurora-green),#1e6a3a)}
+.perf-bar.ko{background:linear-gradient(180deg,#e74c3c,#922b21)}
+.wrong-list{text-align:left;margin-bottom:clamp(8px,2vh,18px)}
+.wrong-list h4{font-size:13px;font-weight:700;color:var(--text-muted);margin-bottom:8px}
+.wrong-item{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(46,134,193,.15);font-size:14px}
+.wrong-char{font-size:18px;color:var(--snow);font-weight:700}
+.wrong-ans{color:var(--text-muted);font-size:13px}
+.review-tag{font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(82,190,128,.1);color:var(--aurora-green);border:1px solid rgba(82,190,128,.2);margin-left:5px}
+
+/* ── DÉFI JOURNALIER ── */
+.defi-header{flex-shrink:0;text-align:center;margin-bottom:clamp(5px,1.5vh,14px)}
+.defi-header h2{font-size:clamp(14px,4vw,18px);font-weight:900;color:var(--snow);margin-bottom:3px}
+.defi-header p{font-size:12px;color:var(--text-muted)}
+.defi-countdown{display:inline-flex;align-items:center;gap:5px;background:rgba(26,82,118,.4);border:1px solid rgba(82,190,128,.3);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--aurora-green);font-weight:600;margin-top:5px}
+.defi-steps{display:flex;justify-content:center;gap:clamp(3px,1vw,6px);margin-bottom:clamp(5px,1.5vh,12px);flex-wrap:wrap;flex-shrink:0}
+.defi-step{width:clamp(18px,5vw,26px);height:clamp(18px,5vw,26px);border-radius:50%;border:2px solid rgba(46,134,193,.3);background:rgba(26,82,118,.3);display:flex;align-items:center;justify-content:center;font-size:clamp(8px,2.5vw,10px);font-weight:700;color:var(--text-muted);transition:all .3s;flex-shrink:0}
+.defi-step.done{background:linear-gradient(135deg,var(--aurora-green),#1e6a3a);border-color:#27ae60;color:#fff}
+.defi-step.active{background:linear-gradient(135deg,var(--blue-light),var(--blue-mid));border-color:var(--aurora-green);color:#fff;transform:scale(1.15);box-shadow:0 2px 8px rgba(82,190,128,.4)}
+.defi-step.fail{background:linear-gradient(135deg,#e74c3c,#922b21);border-color:#922b21;color:#fff}
+.defi-phase-lbl{text-align:center;font-size:clamp(9px,2.5vw,12px);font-weight:700;color:var(--aurora-green);margin-bottom:clamp(4px,1vh,8px);letter-spacing:.5px;text-transform:uppercase;flex-shrink:0}
+
+.defi-result-wrap{text-align:center;padding:.5rem 0}
+.defi-trophy{font-size:clamp(36px,10vw,56px);animation:bounceIn .5s cubic-bezier(.36,.07,.19,.97);margin-bottom:.5rem}
+.defi-stars{display:flex;justify-content:center;gap:5px;margin:.5rem 0 .75rem;font-size:clamp(18px,5vw,26px)}
+.defi-stars span{transition:transform .3s,opacity .3s;opacity:0;transform:scale(0)}
+.defi-stars span.lit{opacity:1;transform:scale(1)}
+.defi-xp-bar{background:rgba(26,82,118,.3);border:1px solid rgba(46,134,193,.2);border-radius:12px;padding:.75rem 1rem;margin-bottom:.85rem}
+.defi-xp-bar .xp-label{font-size:11px;color:var(--text-muted);display:flex;justify-content:space-between;margin-bottom:5px}
+.defi-xp-fill-wrap{height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden}
+.defi-xp-fill{height:100%;background:linear-gradient(90deg,var(--gold),#f39c12);border-radius:4px;width:0;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+.defi-badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:.9rem}
+.defi-badge{background:rgba(26,82,118,.4);border:1px solid rgba(46,134,193,.2);border-radius:10px;padding:6px 10px;font-size:11px;color:var(--snow);font-weight:700;text-align:center;animation:fadeIn .4s ease both}
+.defi-badge .badge-icon{font-size:18px;display:block;margin-bottom:2px}
+.defi-already-done{text-align:center;padding:1rem 0}
+.defi-already-done .big-check{font-size:54px;margin-bottom:.5rem}
+.defi-already-done h3{font-size:16px;font-weight:700;color:var(--aurora-green);margin-bottom:.3rem}
+.defi-already-done p{font-size:12px;color:var(--text-muted);margin-bottom:.75rem}
+.defi-history{background:rgba(26,82,118,.2);border:1px solid rgba(46,134,193,.2);border-radius:10px;padding:.6rem .8rem;margin-bottom:.75rem}
+.defi-history h4{font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:5px}
+.defi-cal{display:flex;gap:4px;flex-wrap:wrap}
+.defi-day{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;border:1px solid rgba(46,134,193,.2)}
+.defi-day.won{background:linear-gradient(135deg,var(--aurora-green),#1e6a3a);color:#fff;border-color:#27ae60}
+.defi-day.lost{background:linear-gradient(135deg,#e74c3c,#922b21);color:#fff;border-color:#922b21}
+.defi-day.empty{background:rgba(26,82,118,.2);color:var(--text-muted)}
+
+/* ── TRADUCTEUR ── */
+.trad-screen{padding:4px 0 12px}
+.trad-dir-toggle{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;flex-shrink:0}
+.trad-lang-btn{background:rgba(26,82,118,.5);border:2px solid rgba(46,134,193,.4);border-radius:10px;padding:6px 14px;font-size:13px;font-weight:700;color:var(--snow);cursor:pointer;font-family:inherit;transition:all .15s;min-width:90px;text-align:center}
+.trad-lang-btn.active{background:rgba(82,190,128,.2);border-color:var(--aurora-green);color:var(--aurora-green)}
+.trad-swap-btn{background:rgba(241,196,15,.15);border:1.5px solid rgba(241,196,15,.4);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:transform .25s;flex-shrink:0}
+.trad-swap-btn:hover{transform:rotate(180deg);background:rgba(241,196,15,.28)}
+.trad-box{background:linear-gradient(135deg,rgba(26,82,118,.5),rgba(13,33,55,.7));border:1.5px solid rgba(46,134,193,.3);border-radius:14px;padding:10px 12px;margin-bottom:10px;position:relative}
+.trad-box-label{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.trad-textarea{width:100%;min-height:72px;background:transparent;border:none;outline:none;font-size:16px;font-weight:700;color:var(--snow);font-family:'Nunito','Segoe UI',sans-serif;resize:none;line-height:1.5;caret-color:var(--aurora-green)}
+.trad-textarea::placeholder{color:rgba(180,210,240,.35);font-weight:400}
+.trad-actions{display:flex;gap:7px;margin-top:6px;justify-content:flex-end;flex-wrap:wrap}
+.trad-icon-btn{background:rgba(46,134,193,.18);border:1.5px solid rgba(46,134,193,.35);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--aurora-teal);cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:5px}
+.trad-icon-btn:hover{background:rgba(46,134,193,.32);color:#fff}
+.trad-icon-btn:disabled{opacity:.35;cursor:not-allowed}
+.trad-icon-btn.recording{background:rgba(231,76,60,.2);border-color:#e74c3c;color:#e74c3c;animation:pulse-rec .8s ease-in-out infinite}
+@keyframes pulse-rec{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.4)}50%{box-shadow:0 0 0 6px rgba(231,76,60,0)}}
+.trad-result-box{background:linear-gradient(135deg,rgba(30,106,58,.18),rgba(26,188,156,.1));border:1.5px solid rgba(82,190,128,.3);border-radius:14px;padding:10px 12px;margin-bottom:10px;min-height:60px}
+.trad-result-text{font-size:17px;font-weight:700;color:var(--snow);line-height:1.5;word-break:break-word}
+.trad-result-hint{font-size:11px;color:var(--aurora-teal);font-family:'Courier New',monospace;margin-top:4px}
+.trad-translate-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--aurora-green),var(--aurora-teal));color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:8px;letter-spacing:.3px}
+.trad-translate-btn:hover{opacity:.88;transform:translateY(-1px)}
+.trad-translate-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.trad-history{margin-top:8px}
+.trad-history-title{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px}
+.trad-history-item{display:flex;flex-direction:column;gap:2px;padding:7px 10px;background:rgba(26,82,118,.25);border:1px solid rgba(46,134,193,.15);border-radius:10px;margin-bottom:5px;cursor:pointer;transition:background .12s}
+.trad-history-item:hover{background:rgba(46,134,193,.2)}
+.trad-history-src{font-size:13px;font-weight:700;color:var(--snow)}
+.trad-history-dst{font-size:12px;color:var(--aurora-teal)}
+
+/* ── AI LOADING ── */
+.ai-loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:.65rem;font-size:13px;color:var(--text-muted)}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--aurora-green);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+
+    <!-- Audio Data -->
+    <script src="js/audio-vocab-data.js"></script>
+    <script src="js/audio-verbes-data.js"></script>
+  </head>
+  <body>
+</head>
+<body>
+
+<!-- Flocons de neige -->
+<div id="snowflakes"></div>
+
+<!-- Aurores boréales cinématiques -->
+<svg class="aurora" viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <defs>
+    <filter id="aBlur1"><feGaussianBlur stdDeviation="28"/></filter>
+    <filter id="aBlur2"><feGaussianBlur stdDeviation="40"/></filter>
+    <filter id="aBlur3"><feGaussianBlur stdDeviation="20"/></filter>
+  </defs>
+  <!-- Couche verte profonde -->
+  <path d="M-100,320 Q100,80 300,180 Q500,280 700,60 Q900,-60 1100,120 Q1200,180 1300,80 L1300,0 L-100,0 Z" fill="rgba(20,160,80,.22)" filter="url(#aBlur2)"/>
+  <!-- Voile violet -->
+  <path d="M-50,360 Q150,120 400,220 Q650,300 850,100 Q1000,0 1200,160 L1200,0 L-50,0 Z" fill="rgba(100,30,180,.18)" filter="url(#aBlur2)"/>
+  <!-- Filaments verts -->
+  <path d="M0,280 Q80,100 200,160 Q320,220 440,80 Q560,-20 680,100 Q800,200 920,60 Q1040,-40 1200,100 L1200,0 L0,0 Z" fill="rgba(40,220,120,.14)" filter="url(#aBlur1)"/>
+  <!-- Accent teal -->
+  <path d="M200,350 Q350,150 500,240 Q650,320 800,140 Q950,20 1100,180 L1200,180 L1200,0 L200,0 Z" fill="rgba(0,200,180,.1)" filter="url(#aBlur3)"/>
+  <!-- Filament lumineux fin -->
+  <path d="M100,200 Q250,40 400,120 Q550,200 700,40 Q850,-60 1000,80 Q1100,140 1200,60" fill="none" stroke="rgba(80,255,160,.12)" stroke-width="60" filter="url(#aBlur1)"/>
+</svg>
+
+<div class="combo-flash" id="comboFlash"></div>
+
+<div class="game">
+
+<!-- MENU -->
+    <div id="menuScreen" class="screen active">
+        <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔇</button>
+
+        <div class="game-title">
+            <h1>🇸🇪 Apprendre le suédois</h1>
+            <p>Välkommen ! Choisissez un mode</p>
+        </div>
+
+        <div class="streak-banner hidden" id="streakBanner">🔥 Série de <span id="streakCount">0</span> — continuez !</div>
+
+        <div class="global-progress" id="globalProgress" style="display:none">
+            <div class="global-progress-label"><span>Progression globale</span><span id="globalPct">0%</span></div>
+            <div class="global-bar"><div class="global-fill" id="globalFill" style="width:0%"></div></div>
+        </div>
+
+        <div class="mode-grid">
+            <div class="defi-card mode-card" onclick="startDefi()">
+                <span class="mode-jp">🏆</span>
+                <div><h3>Défi Journalier</h3><p id="defiCardDesc">Nouveau défi chaque jour</p></div>
+                <div class="defi-shine"></div>
+                <div id="defiDoneBadge" class="defi-done-badge" style="display:none">✓ Complété</div>
+                <div id="defiStreakBadge" class="defi-streak-badge" style="display:none"></div>
+            </div>
+            <div class="mode-card" onclick="chooseDirScreen('vocab')">
+                <span class="mode-jp">📖</span><h3>Vocabulaire</h3><p>Mots essentiels</p>
+            </div>
+            <div class="mode-card" onclick="chooseDirScreen('phrases')">
+                <span class="mode-jp">💬</span><h3>Phrases</h3><p>Expressions du quotidien</p>
+            </div>
+            <div class="mode-card" onclick="chooseDirScreen('mixed')">
+                <span class="mode-jp">🎲</span><h3>Mixte</h3><p>Vocab + Phrases</p>
+            </div>
+            <div class="mode-card" onclick="chooseReconstructDir()">
+                <span class="mode-jp">🧩</span><h3>Reconstruire</h3><p>Formez la phrase</p>
+            </div>
+            <div class="mode-card" onclick="chooseDicteeDir()">
+                <span class="mode-jp">👂</span><h3>Dictée</h3><p>Écoutez, écrivez les mots</p>
+            </div>
+            <div class="mode-card" onclick="startReview()" id="reviewCard" style="display:none">
+                <span class="mode-jp">🔁</span><h3>Révision</h3><p id="reviewCount">Retravailler les erreurs</p>
+            </div>
+            <div class="mode-card" onclick="showTranslator()" style="border-color:rgba(241,196,15,.35);background:rgba(241,196,15,.08)">
+                <span class="mode-jp">🌐</span><h3>Traducteur</h3><p>FR ↔ SE · dicter &amp; écouter</p>
+            </div>
+        </div>
+
+        <!-- Catégories -->
+        <div style="margin-top:8px;margin-bottom:16px">
+          <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;text-align:center">📂 Par catégorie</div>
+          <div id="catGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px"></div>
+        </div>
+
+        <!-- Paysage suédois intégré sous les boutons -->
+        <div class="menu-landscape" style="pointer-events:none">
+            <svg viewBox="0 0 500 220" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%">
+                <defs>
+                    <!-- Ciel nocturne profond -->
+                    <linearGradient id="lSky" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#020810" />
+                        <stop offset="40%" stop-color="#071528" />
+                        <stop offset="75%" stop-color="#0b2240" />
+                        <stop offset="100%" stop-color="#102c52" />
+                    </linearGradient>
+                    <!-- Aurora principale verte -->
+                    <linearGradient id="lAur1" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="rgba(30,220,120,0)" />
+                        <stop offset="40%" stop-color="rgba(30,220,120,0.45)" />
+                        <stop offset="100%" stop-color="rgba(30,220,120,0)" />
+                    </linearGradient>
+                    <!-- Aurora violette -->
+                    <linearGradient id="lAur2" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="rgba(120,40,200,0)" />
+                        <stop offset="50%" stop-color="rgba(120,40,200,0.3)" />
+                        <stop offset="100%" stop-color="rgba(120,40,200,0)" />
+                    </linearGradient>
+                    <!-- Aurora cyan -->
+                    <linearGradient id="lAur3" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="rgba(0,200,200,0)" />
+                        <stop offset="45%" stop-color="rgba(0,200,200,0.25)" />
+                        <stop offset="100%" stop-color="rgba(0,200,200,0)" />
+                    </linearGradient>
+                    <!-- Montagne lointaine -->
+                    <linearGradient id="lMtnFar" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#1c3050" />
+                        <stop offset="100%" stop-color="#0e1e35" />
+                    </linearGradient>
+                    <!-- Montagne proche -->
+                    <linearGradient id="lMtnMid" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#162840" />
+                        <stop offset="100%" stop-color="#0a1828" />
+                    </linearGradient>
+                    <!-- Lac avec reflets -->
+                    <linearGradient id="lLake" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#0d2a48" stop-opacity=".95" />
+                        <stop offset="100%" stop-color="#050e1c" stop-opacity="1" />
+                    </linearGradient>
+                    <!-- Reflet aurora sur lac -->
+                    <linearGradient id="lLakeAur" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="transparent" />
+                        <stop offset="20%" stop-color="rgba(30,220,120,0.12)" />
+                        <stop offset="50%" stop-color="rgba(100,60,200,0.08)" />
+                        <stop offset="80%" stop-color="rgba(30,220,120,0.1)" />
+                        <stop offset="100%" stop-color="transparent" />
+                    </linearGradient>
+                    <!-- Neige sommets -->
+                    <linearGradient id="lSnow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#e8f2fc" stop-opacity=".95" />
+                        <stop offset="100%" stop-color="#9ab8d0" stop-opacity=".3" />
+                    </linearGradient>
+                    <!-- Sol enneigé -->
+                    <linearGradient id="lGround" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#cddde8" stop-opacity=".9" />
+                        <stop offset="100%" stop-color="#7a9ab4" stop-opacity=".7" />
+                    </linearGradient>
+                    <!-- Maison rouge Falun -->
+                    <linearGradient id="lFalun" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#8c1818" />
+                        <stop offset="100%" stop-color="#6a1010" />
+                    </linearGradient>
+                    <linearGradient id="lFalun2" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#7a1414" />
+                        <stop offset="100%" stop-color="#5e0e0e" />
+                    </linearGradient>
+                    <!-- Fondu en haut -->
+                    <linearGradient id="lFade" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#0d2137" stop-opacity="1" />
+                        <stop offset="45%" stop-color="#0d2137" stop-opacity="0" />
+                    </linearGradient>
+                    <!-- Glow fenêtre -->
+                    <radialGradient id="lWinGlow" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#f8d060" stop-opacity=".7" />
+                        <stop offset="100%" stop-color="#e89020" stop-opacity="0" />
+                    </radialGradient>
+                    <!-- Reflet lune sur eau -->
+                    <radialGradient id="lMoonRef" cx="50%" cy="0%" r="100%">
+                        <stop offset="0%" stop-color="#d0e8f8" stop-opacity=".35" />
+                        <stop offset="100%" stop-color="#d0e8f8" stop-opacity="0" />
+                    </radialGradient>
+                    <!-- Filtres -->
+                    <filter id="lBlur6"><feGaussianBlur stdDeviation="6" /></filter>
+                    <filter id="lBlur4"><feGaussianBlur stdDeviation="4" /></filter>
+                    <filter id="lBlur3"><feGaussianBlur stdDeviation="3" /></filter>
+                    <filter id="lBlur2"><feGaussianBlur stdDeviation="2" /></filter>
+                    <filter id="lBlur1"><feGaussianBlur stdDeviation="1" /></filter>
+                    <filter id="lGlow">
+                        <feGaussianBlur stdDeviation="2.5" result="blur" />
+                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
+                    <filter id="lStarGlow">
+                        <feGaussianBlur stdDeviation="1" result="blur" />
+                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
+                    <!-- Animation aurora -->
+                    <style>
+                        @keyframes aurPulse1 {
+                            0%,100% {
+                                opacity: .55
+                            }
+
+                            50% {
+                                opacity: .85
+                            }
+                        }
+
+                        @keyframes aurPulse2 {
+                            0%,100% {
+                                opacity: .35
+                            }
+
+                            50% {
+                                opacity: .6
+                            }
+                        }
+
+                        @keyframes aurPulse3 {
+                            0%,100% {
+                                opacity: .25
+                            }
+
+                            60% {
+                                opacity: .5
+                            }
+                        }
+
+                        @keyframes aurShift {
+                            0% {
+                                transform: translateX(0)
+                            }
+
+                            50% {
+                                transform: translateX(8px)
+                            }
+
+                            100% {
+                                transform: translateX(0)
+                            }
+                        }
+
+                        @keyframes starTwinkle {
+                            0%,100% {
+                                opacity: .9
+                            }
+
+                            50% {
+                                opacity: .3
+                            }
+                        }
+
+                        @keyframes starTwinkle2 {
+                            0%,100% {
+                                opacity: .6
+                            }
+
+                            60% {
+                                opacity: .15
+                            }
+                        }
+
+                        @keyframes moonGlow {
+                            0%,100% {
+                                opacity: .18
+                            }
+
+                            50% {
+                                opacity: .28
+                            }
+                        }
+
+                        @keyframes smokeRise {
+                            0% {
+                                transform: translateY(0) scaleX(1);
+                                opacity: .18
+                            }
+
+                            100% {
+                                transform: translateY(-12px) scaleX(1.4);
+                                opacity: 0
+                            }
+                        }
+
+                        .aur1 {
+                            animation: aurPulse1 4s ease-in-out infinite
+                        }
+
+                        .aur2 {
+                            animation: aurPulse2 5.5s ease-in-out infinite .8s
+                        }
+
+                        .aur3 {
+                            animation: aurPulse3 3.8s ease-in-out infinite 1.5s
+                        }
+
+                        .aurShift {
+                            animation: aurShift 7s ease-in-out infinite
+                        }
+
+                        .twinkle1 {
+                            animation: starTwinkle 2.8s ease-in-out infinite
+                        }
+
+                        .twinkle2 {
+                            animation: starTwinkle2 3.5s ease-in-out infinite .6s
+                        }
+
+                        .twinkle3 {
+                            animation: starTwinkle 4.1s ease-in-out infinite 1.2s
+                        }
+
+                        .moonHalo {
+                            animation: moonGlow 6s ease-in-out infinite
+                        }
+
+                        .smoke1 {
+                            animation: smokeRise 3.2s ease-out infinite
+                        }
+
+                        .smoke2 {
+                            animation: smokeRise 4s ease-out infinite .8s
+                        }
+
+                        .smoke3 {
+                            animation: smokeRise 3.6s ease-out infinite 1.5s
+                        }
+                    </style>
+                    <clipPath id="lClip"><rect width="500" height="220" /></clipPath>
+                </defs>
+
+                <g clip-path="url(#lClip)">
+
+                    <!-- Ciel nocturne -->
+                    <rect width="500" height="220" fill="url(#lSky)" />
+
+                    <!-- ═══ AURORES BORÉALES ═══ -->
+                    <!-- Voile vert principal — large -->
+                    <g class="aur1" filter="url(#lBlur4)">
+                        <path d="M-20,15 Q60,-8 140,18 Q220,42 300,8 Q380,-18 500,10 L520,55 Q400,40 300,62 Q200,80 120,55 Q50,35 -20,55 Z"
+                              fill="url(#lAur1)" opacity=".8" />
+                    </g>
+                    <!-- Rideau violet -->
+                    <g class="aur2" filter="url(#lBlur3)">
+                        <path d="M30,35 Q110,5 200,28 Q290,52 380,20 Q440,4 520,22 L520,65 Q440,50 380,68 Q280,88 190,62 Q100,42 30,65 Z"
+                              fill="url(#lAur2)" opacity=".7" />
+                    </g>
+                    <!-- Filaments cyan -->
+                    <g class="aur3 aurShift" filter="url(#lBlur2)">
+                        <path d="M0,48 Q80,18 170,40 Q260,60 360,28 Q430,12 500,35 L500,72 Q430,58 360,76 Q255,96 165,72 Q75,52 0,72 Z"
+                              fill="url(#lAur3)" opacity=".6" />
+                    </g>
+                    <!-- Rayons verticaux subtils -->
+                    <g filter="url(#lBlur3)" opacity=".18" class="aur1">
+                        <line x1="80" y1="0" x2="65" y2="80" stroke="#30ee90" stroke-width="3" />
+                        <line x1="160" y1="0" x2="148" y2="75" stroke="#30ee90" stroke-width="2" />
+                        <line x1="260" y1="0" x2="248" y2="72" stroke="#20d880" stroke-width="2.5" />
+                        <line x1="340" y1="0" x2="330" y2="70" stroke="#50c0ff" stroke-width="2" />
+                        <line x1="420" y1="0" x2="408" y2="78" stroke="#30ee90" stroke-width="3" />
+                    </g>
+
+                    <!-- ═══ ÉTOILES (certaines clignotantes) ═══ -->
+                    <g filter="url(#lStarGlow)">
+                        <!-- Étoiles fixes -->
+                        <circle cx="12" cy="6" r="0.7" fill="#fff" opacity=".8" />
+                        <circle cx="38" cy="3" r="0.5" fill="#fff" opacity=".65" />
+                        <circle cx="88" cy="8" r="0.6" fill="#fff" opacity=".7" />
+                        <circle cx="115" cy="4" r="0.4" fill="#c8e8ff" opacity=".6" />
+                        <circle cx="148" cy="2" r="0.8" fill="#fff" opacity=".85" />
+                        <circle cx="178" cy="9" r="0.5" fill="#fff" opacity=".55" />
+                        <circle cx="232" cy="4" r="0.7" fill="#c8e8ff" opacity=".75" />
+                        <circle cx="268" cy="1" r="0.5" fill="#fff" opacity=".9" />
+                        <circle cx="305" cy="6" r="0.6" fill="#fff" opacity=".7" />
+                        <circle cx="338" cy="3" r="0.4" fill="#c8e8ff" opacity=".8" />
+                        <circle cx="372" cy="10" r="0.7" fill="#fff" opacity=".65" />
+                        <circle cx="408" cy="2" r="0.5" fill="#fff" opacity=".9" />
+                        <circle cx="445" cy="7" r="0.6" fill="#fff" opacity=".75" />
+                        <circle cx="478" cy="3" r="0.4" fill="#c8e8ff" opacity=".8" />
+                        <!-- Étoiles clignotantes -->
+                        <circle cx="55" cy="14" r="0.9" fill="#fff" class="twinkle1" opacity=".9" />
+                        <circle cx="198" cy="12" r="0.7" fill="#e0f0ff" class="twinkle2" opacity=".7" />
+                        <circle cx="320" cy="15" r="0.9" fill="#fff" class="twinkle3" opacity=".85" />
+                        <circle cx="458" cy="11" r="0.7" fill="#e0f0ff" class="twinkle1" opacity=".75" />
+                        <circle cx="130" cy="18" r="0.5" fill="#fff" class="twinkle2" opacity=".6" />
+                        <circle cx="380" cy="16" r="0.6" fill="#fff" class="twinkle3" opacity=".7" />
+                        <!-- Étoile brillante (type Polaris) -->
+                        <circle cx="82" cy="12" r="1.4" fill="#ffffff" class="twinkle1" opacity=".95" />
+                        <line x1="82" y1="9" x2="82" y2="15" stroke="#fff" stroke-width=".4" opacity=".5" class="twinkle1" />
+                        <line x1="79" y1="12" x2="85" y2="12" stroke="#fff" stroke-width=".4" opacity=".5" class="twinkle1" />
+                    </g>
+
+                    <!-- ═══ LUNE ═══ -->
+                    <!-- Halo lunaire animé -->
+                    <circle cx="430" cy="28" r="26" fill="none" stroke="#8ab8d8" stroke-width="2" class="moonHalo" filter="url(#lBlur4)" />
+                    <circle cx="430" cy="28" r="20" fill="rgba(180,210,240,.06)" filter="url(#lBlur4)" />
+                    <circle cx="430" cy="28" r="13" fill="#d0e4f2" />
+
+                    <!-- ═══ MONTAGNES LOINTAINES ═══ -->
+                    <path d="M0,110 Q25,78 55,86 Q82,93 108,72 Q132,52 160,68 Q185,82 210,60 Q235,40 265,56 Q292,70 318,52 Q344,35 375,50 Q405,63 432,44 Q458,27 490,42 Q497,46 500,48 L500,220 L0,220 Z"
+                          fill="url(#lMtnFar)" opacity=".75" />
+                    <!-- Caps neige lointains -->
+                    <path d="M106,72 Q109,60 113,64 Q116,56 120,61 Q117,68 109,74 Z" fill="url(#lSnow)" opacity=".55" />
+                    <path d="M208,60 Q212,47 216,52 Q220,43 225,49 Q221,57 213,62 Z" fill="url(#lSnow)" opacity=".5" />
+                    <path d="M316,52 Q321,38 325,44 Q330,34 335,41 Q331,50 322,54 Z" fill="url(#lSnow)" opacity=".55" />
+                    <path d="M430,44 Q435,29 440,35 Q446,24 452,31 Q447,42 436,46 Z" fill="url(#lSnow)" opacity=".5" />
+
+                    <!-- ═══ MONTAGNES PROCHES ═══ -->
+                    <path d="M0,138 Q18,108 48,116 Q72,122 94,100 Q116,78 140,94 Q162,108 184,85 Q205,63 230,80 Q254,96 278,74 Q302,53 330,68 Q356,82 382,60 Q408,40 438,56 Q462,68 490,52 L500,56 L500,220 L0,220 Z"
+                          fill="url(#lMtnMid)" />
+                    <!-- Neige arêtes proches -->
+                    <path d="M92,100 Q97,85 102,91 Q107,80 112,87 Q107,97 98,102 Z" fill="url(#lSnow)" opacity=".8" />
+                    <path d="M182,85 Q188,68 193,75 Q198,63 204,70 Q199,81 189,88 Z" fill="url(#lSnow)" opacity=".78" />
+                    <path d="M276,74 Q282,56 288,64 Q294,50 300,58 Q295,70 283,77 Z" fill="url(#lSnow)" opacity=".75" />
+                    <path d="M380,60 Q386,42 392,50 Q398,37 405,45 Q400,57 387,63 Z" fill="url(#lSnow)" opacity=".8" />
+                    <path d="M436,56 Q442,38 448,47 Q454,33 461,42 Q455,54 443,59 Z" fill="url(#lSnow)" opacity=".75" />
+
+                    <!-- ═══ FORÊT FOND (silhouette sombre) ═══ -->
+                    <g fill="#061410" opacity=".92">
+                        <path d="M0,154 L7,130 L14,154 Z" />
+                        <path d="M10,154 L18,124 L26,154 Z" />
+                        <path d="M21,154 L30,118 L39,154 Z" />
+                        <path d="M33,154 L42,128 L51,154 Z" />
+                        <path d="M46,154 L56,120 L66,154 Z" />
+                        <path d="M58,154 L69,116 L80,154 Z" />
+                        <path d="M72,154 L82,126 L92,154 Z" />
+                        <path d="M84,154 L93,122 L102,154 Z" />
+                        <path d="M415,154 L424,126 L433,154 Z" />
+                        <path d="M427,154 L437,122 L447,154 Z" />
+                        <path d="M440,154 L450,118 L460,154 Z" />
+                        <path d="M452,154 L462,124 L472,154 Z" />
+                        <path d="M465,154 L475,120 L485,154 Z" />
+                        <path d="M477,154 L487,116 L497,154 Z" />
+                    </g>
+
+                    <!-- ═══ FORÊT PREMIER PLAN GAUCHE ═══ -->
+                    <!-- Pin 1 — grand -->
+                    <rect x="10" y="162" width="5" height="58" fill="#150c06" rx="1" />
+                    <path d="M12,162 L-6,186 L31,186 Z" fill="#081f0f" />
+                    <path d="M12,150 L-8,178 L33,178 Z" fill="#0a2612" />
+                    <path d="M12,138 L-5,168 L30,168 Z" fill="#0c2e15" />
+                    <path d="M12,127 L-2,160 L27,160 Z" fill="#0e3618" />
+                    <path d="M12,117 L2,150 L23,150 Z" fill="#103f1c" />
+                    <!-- Neige sur branches pin 1 -->
+                    <path d="M-6,186 Q3,182 12,183 Q22,182 31,186" fill="none" stroke="#cddce8" stroke-width="2.2" stroke-opacity=".75" />
+                    <path d="M-8,178 Q2,174 12,175 Q23,174 33,178" fill="none" stroke="#cddce8" stroke-width="1.8" stroke-opacity=".65" />
+                    <path d="M-5,168 Q3,164 12,165 Q22,164 30,168" fill="none" stroke="#cddce8" stroke-width="1.4" stroke-opacity=".55" />
+
+                    <!-- Pin 2 — moyen -->
+                    <rect x="38" y="158" width="4" height="62" fill="#150c06" rx="1" />
+                    <path d="M40,160 L22,182 L59,182 Z" fill="#092210" />
+                    <path d="M40,148 L20,174 L61,174 Z" fill="#0b2a14" />
+                    <path d="M40,136 L23,164 L58,164 Z" fill="#0d3218" />
+                    <path d="M40,126 L25,154 L56,154 Z" fill="#0f3a1c" />
+                    <path d="M40,116 L28,144 L53,144 Z" fill="#114320" />
+                    <path d="M22,182 Q31,178 40,179 Q50,178 59,182" fill="none" stroke="#cddce8" stroke-width="2.2" stroke-opacity=".72" />
+                    <path d="M20,174 Q30,170 40,171 Q51,170 61,174" fill="none" stroke="#cddce8" stroke-width="1.8" stroke-opacity=".62" />
+
+                    <!-- Pin 3 — petit -->
+                    <rect x="67" y="166" width="3" height="54" fill="#150c06" rx="1" />
+                    <path d="M68,168 L55,186 L82,186 Z" fill="#082010" />
+                    <path d="M68,158 L54,178 L83,178 Z" fill="#0a2814" />
+                    <path d="M68,148 L56,170 L81,170 Z" fill="#0c3018" />
+                    <path d="M55,186 Q61,183 68,184 Q76,183 82,186" fill="none" stroke="#cddce8" stroke-width="1.6" stroke-opacity=".65" />
+
+                    <!-- Pin 4 — très grand -->
+                    <rect x="84" y="155" width="6" height="65" fill="#150c06" rx="1" />
+                    <path d="M87,157 L64,186 L112,186 Z" fill="#082010" />
+                    <path d="M87,143 L62,176 L113,176 Z" fill="#0a2814" />
+                    <path d="M87,130 L65,166 L110,166 Z" fill="#0c3018" />
+                    <path d="M87,118 L67,156 L108,156 Z" fill="#0e381c" />
+                    <path d="M87,107 L70,146 L105,146 Z" fill="#104020" />
+                    <path d="M64,186 Q76,181 87,183 Q99,181 112,186" fill="none" stroke="#cddce8" stroke-width="2.5" stroke-opacity=".75" />
+                    <path d="M62,176 Q75,171 87,173 Q100,171 113,176" fill="none" stroke="#cddce8" stroke-width="2" stroke-opacity=".65" />
+                    <path d="M65,166 Q76,162 87,163 Q99,162 110,166" fill="none" stroke="#cddce8" stroke-width="1.6" stroke-opacity=".55" />
+
+                    <!-- ═══ FORÊT PREMIER PLAN DROITE ═══ -->
+                    <!-- Pin R1 — très grand -->
+                    <rect x="408" y="153" width="6" height="67" fill="#150c06" rx="1" />
+                    <path d="M411,155 L387,186 L436,186 Z" fill="#082010" />
+                    <path d="M411,142 L385,175 L437,175 Z" fill="#0a2814" />
+                    <path d="M411,130 L387,165 L435,165 Z" fill="#0c3018" />
+                    <path d="M411,118 L389,155 L433,155 Z" fill="#0e381c" />
+                    <path d="M411,107 L392,144 L430,144 Z" fill="#104020" />
+                    <path d="M387,186 Q399,181 411,183 Q424,181 436,186" fill="none" stroke="#cddce8" stroke-width="2.5" stroke-opacity=".75" />
+                    <path d="M385,175 Q398,170 411,172 Q425,170 437,175" fill="none" stroke="#cddce8" stroke-width="2" stroke-opacity=".65" />
+
+                    <!-- Pin R2 — moyen -->
+                    <rect x="438" y="159" width="4" height="61" fill="#150c06" rx="1" />
+                    <path d="M440,161 L420,183 L461,183 Z" fill="#092010" />
+                    <path d="M440,149 L418,175 L463,175 Z" fill="#0b2814" />
+                    <path d="M440,137 L420,165 L461,165 Z" fill="#0d3018" />
+                    <path d="M440,127 L422,155 L459,155 Z" fill="#0f3a1c" />
+                    <path d="M420,183 Q430,179 440,180 Q451,179 461,183" fill="none" stroke="#cddce8" stroke-width="2.2" stroke-opacity=".72" />
+
+                    <!-- Pin R3 — petit -->
+                    <rect x="463" y="167" width="3" height="53" fill="#150c06" rx="1" />
+                    <path d="M464,169 L450,187 L479,187 Z" fill="#082010" />
+                    <path d="M464,159 L449,179 L480,179 Z" fill="#0a2814" />
+                    <path d="M464,149 L451,171 L478,171 Z" fill="#0c3018" />
+                    <path d="M450,187 Q457,184 464,185 Q472,184 479,187" fill="none" stroke="#cddce8" stroke-width="1.6" stroke-opacity=".65" />
+
+                    <!-- Pin R4 — grand -->
+                    <rect x="480" y="156" width="5" height="64" fill="#150c06" rx="1" />
+                    <path d="M482,158 L462,184 L504,184 Z" fill="#082010" />
+                    <path d="M482,145 L460,174 L505,174 Z" fill="#0a2814" />
+                    <path d="M482,133 L462,165 L503,165 Z" fill="#0c3018" />
+                    <path d="M482,122 L464,155 L501,155 Z" fill="#0e381c" />
+
+                    <!-- ═══ LAC / FJORD ═══ -->
+                    <ellipse cx="250" cy="193" rx="160" ry="22" fill="url(#lLake)" />
+                    <!-- Reflet aurora sur lac -->
+                    <ellipse cx="250" cy="193" rx="140" ry="14" fill="url(#lLakeAur)" opacity=".9" class="aur1" />
+                    <!-- Rides d'eau -->
+                    <path d="M98,190 Q170,185 250,187 Q330,189 402,190" fill="none" stroke="rgba(120,180,220,.1)" stroke-width="1" />
+                    <path d="M115,194 Q185,191 250,192 Q315,193 385,194" fill="none" stroke="rgba(120,180,220,.08)" stroke-width=".8" />
+                    <path d="M135,198 Q195,196 250,197 Q305,198 365,198" fill="none" stroke="rgba(120,180,220,.06)" stroke-width=".7" />
+                    <!-- Reflet lune sur lac -->
+                    <ellipse cx="290" cy="191" rx="18" ry="6" fill="url(#lMoonRef)" class="moonHalo" filter="url(#lBlur2)" />
+                    <path d="M285,191 Q290,189.5 295,191" fill="none" stroke="rgba(200,228,248,.4)" stroke-width=".8" />
+
+                    <!-- ═══ MAISON FALUN GAUCHE ═══ -->
+                    <g transform="translate(108,148)">
+                        <!-- Ombre au sol -->
+                        <ellipse cx="32" cy="56" rx="30" ry="4.5" fill="rgba(0,0,0,.35)" filter="url(#lBlur2)" />
+                        <!-- Corps maison (rouge Falun opaque) -->
+                        <rect x="4" y="24" width="65" height="32" fill="#8b1a1a" />
+                        <!-- Face latérale droite (rouge plus sombre, ombre) -->
+                        <rect x="63" y="24" width="6" height="32" fill="#6e1414" />
+                        <!-- Toit principal -->
+                        <polygon points="-3,24 32,0 67,24" fill="#380908" />
+                        <!-- Versant ombre -->
+                        <polygon points="32,0 67,24 60,24" fill="#28070707" />
+                        <!-- Neige sur toit (épaisse pour couvrir tout le toit) -->
+                        <path d="M-3,24 Q4,15 12,10 Q18,5 25,3 Q32,1 39,3 Q46,6 54,12 Q60,18 67,24" fill="#cddde8" opacity=".92" />
+                        <path d="M-3,24 Q8,20 17,16 Q26,10 32,7 Q39,11 48,16 Q57,20 67,24" fill="white" opacity=".25" />
+                        <!-- Cheminée (étendue pour rentrer dans le toit) -->
+                        <rect x="44" y="-16" width="9" height="32" rx="1" fill="#280708" />
+                        <rect x="42" y="-18" width="13" height="5" rx="1" fill="#180505" />
+                        <!-- Fumée animée -->
+                        <ellipse cx="48" cy="-22" rx="5" ry="3" fill="rgba(190,190,200,.2)" filter="url(#lBlur2)" class="smoke1" />
+                        <ellipse cx="50" cy="-30" rx="4.5" ry="3.5" fill="rgba(190,190,200,.16)" filter="url(#lBlur3)" class="smoke2" />
+                        <ellipse cx="47" cy="-38" rx="6" ry="4.5" fill="rgba(190,190,200,.1)" filter="url(#lBlur4)" class="smoke3" />
+                        <!-- Porte -->
+                        <rect x="26" y="36" width="15" height="20" rx="1.5" fill="#380808" />
+                        <rect x="28" y="38" width="11" height="14" rx="1" fill="#260606" />
+                        <!-- Poignée porte -->
+                        <circle cx="36" cy="47" r="1" fill="#d4a040" opacity=".7" />
+                        <!-- Fenêtres lumineuses -->
+                        <rect x="7" y="29" width="14" height="12" rx="1.5" fill="#f8d060" opacity=".75" />
+                        <rect x="44" y="29" width="14" height="12" rx="1.5" fill="#f8c840" opacity=".7" />
+                        <!-- Croisillons -->
+                        <line x1="7" y1="35" x2="21" y2="35" stroke="#500e0e" stroke-width=".8" />
+                        <line x1="14" y1="29" x2="14" y2="41" stroke="#500e0e" stroke-width=".8" />
+                        <line x1="44" y1="35" x2="58" y2="35" stroke="#500e0e" stroke-width=".8" />
+                        <line x1="51" y1="29" x2="51" y2="41" stroke="#500e0e" stroke-width=".8" />
+                        <!-- Halo lumineux fenêtres -->
+                        <ellipse cx="14" cy="35" rx="12" ry="8" fill="#f8d060" opacity=".14" filter="url(#lBlur4)" />
+                        <ellipse cx="51" cy="35" rx="12" ry="8" fill="#f8c840" opacity=".12" filter="url(#lBlur4)" />
+                        <!-- Lumière projetée sur neige -->
+                        <path d="M7,56 Q15,52 21,54 Q14,48 21,50" fill="rgba(248,210,60,.06)" />
+                        <!-- Volets -->
+                        <rect x="5" y="29" width="3" height="12" fill="#280707" rx=".5" />
+                        <rect x="20" y="29" width="3" height="12" fill="#280707" rx=".5" />
+                        <rect x="42" y="29" width="3" height="12" fill="#280707" rx=".5" />
+                        <rect x="57" y="29" width="3" height="12" fill="#280707" rx=".5" />
+                        <!-- Neige sur rebords fenêtres -->
+                        <path d="M7,29 L21,29" stroke="white" stroke-width="1.5" stroke-opacity=".3" />
+                        <path d="M44,29 L58,29" stroke="white" stroke-width="1.5" stroke-opacity=".3" />
+                    </g>
+
+                    <!-- ═══ MAISON FALUN DROITE ═══ -->
+                    <g transform="translate(316,148)">
+                        <ellipse cx="27" cy="52" rx="25" ry="4" fill="rgba(0,0,0,.32)" filter="url(#lBlur2)" />
+                        <!-- Corps (rouge Falun opaque) -->
+                        <rect x="3" y="22" width="58" height="30" fill="#7a1414" />
+                        <!-- Face latérale droite (rouge plus sombre) -->
+                        <rect x="56" y="22" width="5" height="30" fill="#5e0e0e" />
+                        <!-- Toit -->
+                        <polygon points="-1,22 27,1 59,22" fill="#3a0909" />
+                        <polygon points="27,1 59,22 53,22" fill="#2a0808" />
+                        <!-- Neige toit (épaissie pour bien couvrir) -->
+                        <path d="M-1,22 Q5,14 13,9 Q19,4 27,2 Q35,5 44,10 Q52,16 59,22" fill="#cddde8" opacity=".9" />
+                        <path d="M-1,22 Q8,19 18,14 Q27,8 36,13 Q48,19 59,22" fill="white" opacity=".24" />
+                        <!-- Cheminée (alignée même décalage que gauche: +12px du sommet toit) -->
+                        <rect x="39" y="-16" width="9" height="32" rx="1" fill="#2a0808" />
+                        <rect x="37" y="-18" width="13" height="5" rx="1" fill="#180505" />
+                        <ellipse cx="42" cy="-18" rx="4.5" ry="2.5" fill="rgba(190,190,200,.18)" filter="url(#lBlur2)" class="smoke1" />
+                        <ellipse cx="44" cy="-26" rx="4" ry="3" fill="rgba(190,190,200,.13)" filter="url(#lBlur3)" class="smoke2" />
+                        <!-- Porte -->
+                        <rect x="22" y="33" width="13" height="19" rx="1.5" fill="#380808" />
+                        <rect x="24" y="35" width="9" height="13" rx="1" fill="#260606" />
+                        <circle cx="30" cy="44" r=".9" fill="#d4a040" opacity=".65" />
+                        <!-- Fenêtres -->
+                        <rect x="5" y="27" width="13" height="11" rx="1.5" fill="#f8d060" opacity=".7" />
+                        <rect x="38" y="27" width="13" height="11" rx="1.5" fill="#f8c840" opacity=".65" />
+                        <line x1="5" y1="32.5" x2="18" y2="32.5" stroke="#500e0e" stroke-width=".8" />
+                        <line x1="11.5" y1="27" x2="11.5" y2="38" stroke="#500e0e" stroke-width=".8" />
+                        <line x1="38" y1="32.5" x2="51" y2="32.5" stroke="#500e0e" stroke-width=".8" />
+                        <line x1="44.5" y1="27" x2="44.5" y2="38" stroke="#500e0e" stroke-width=".8" />
+                        <ellipse cx="11.5" cy="32.5" rx="10" ry="7" fill="#f8d060" opacity=".11" filter="url(#lBlur4)" />
+                        <ellipse cx="44.5" cy="32.5" rx="10" ry="7" fill="#f8c840" opacity=".1" filter="url(#lBlur4)" />
+                        <!-- Volets -->
+                        <rect x="3" y="27" width="3" height="11" fill="#280707" rx=".5" />
+                        <rect x="17" y="27" width="3" height="11" fill="#280707" rx=".5" />
+                        <rect x="36" y="27" width="3" height="11" fill="#280707" rx=".5" />
+                        <rect x="50" y="27" width="3" height="11" fill="#280707" rx=".5" />
+                    </g>
+
+                    <!-- ═══ PONT EN BOIS (détail nordique) ═══ -->
+                    <g opacity=".85">
+                        <!-- Tablier pont -->
+                        <rect x="210" y="187" width="80" height="5" fill="#1a0e06" rx="1" />
+                        <!-- Piles -->
+                        <rect x="215" y="188" width="4" height="14" fill="#150c05" />
+                        <rect x="281" y="188" width="4" height="14" fill="#150c05" />
+                        <!-- Garde-corps gauche -->
+                        <line x1="210" y1="187" x2="290" y2="187" stroke="#1a0e06" stroke-width="1.5" />
+                        <!-- Poteaux garde-corps -->
+                        <line x1="218" y1="187" x2="218" y2="183" stroke="#1a0e06" stroke-width="1" />
+                        <line x1="234" y1="187" x2="234" y2="183" stroke="#1a0e06" stroke-width="1" />
+                        <line x1="250" y1="187" x2="250" y2="183" stroke="#1a0e06" stroke-width="1" />
+                        <line x1="266" y1="187" x2="266" y2="183" stroke="#1a0e06" stroke-width="1" />
+                        <line x1="282" y1="187" x2="282" y2="183" stroke="#1a0e06" stroke-width="1" />
+                        <line x1="210" y1="183" x2="290" y2="183" stroke="#1a0e06" stroke-width=".8" />
+                        <!-- Reflet pont sur lac -->
+                        <rect x="210" y="192" width="80" height="3" fill="#1a0e06" opacity=".2" />
+                    </g>
+
+                    <!-- ═══ SOL ENNEIGÉ ═══ -->
+                    <path d="M0,208 Q60,202 130,205 Q200,208 250,206 Q320,203 400,206 Q450,208 500,205 L500,220 L0,220 Z"
+                          fill="url(#lGround)" />
+                    <!-- Relief neige -->
+                    <path d="M0,208 Q50,204 100,206 Q160,208 220,206 Q280,203 340,205 Q400,207 460,204 Q480,203 500,205"
+                          fill="none" stroke="white" stroke-width=".7" stroke-opacity=".35" />
+                    <!-- Petits drifts de neige -->
+                    <ellipse cx="155" cy="208" rx="18" ry="4" fill="white" opacity=".12" />
+                    <ellipse cx="348" cy="207" rx="14" ry="3.5" fill="white" opacity=".1" />
+                    <!-- Empreintes dans la neige (détail) -->
+                    <g opacity=".3" fill="rgba(80,100,130,.6)">
+                        <ellipse cx="185" cy="210" rx="2.5" ry="1.2" transform="rotate(-15,185,210)" />
+                        <ellipse cx="192" cy="209" rx="2.5" ry="1.2" transform="rotate(10,192,209)" />
+                        <ellipse cx="199" cy="211" rx="2.5" ry="1.2" transform="rotate(-5,199,211)" />
+                    </g>
+
+                    <!-- ═══ FONDU VERS LE HAUT (masque interface) ═══ -->
+                    <rect width="500" height="80" fill="url(#lFade)" />
+
+                </g>
+            </svg>
+        </div>
+    </div>
+
+<!-- DIRECTION PICKER -->
+<div id="dirScreen" class="screen">
+  <button class="btn-back" onclick="goMenu()">← Retour menu</button>
+  <div class="dir-screen">
+    <div class="dir-title" id="dirTitle">Choisir le sens</div>
+    <div class="dir-subtitle">Comment voulez-vous vous entraîner ?</div>
+    <div class="dir-grid">
+      <div class="dir-card" onclick="startGame(pendingMode,'sv2fr')">
+        <span class="dir-card-icon">🇸🇪→?</span>
+        <h3>Suédois → Français</h3>
+        <p>Voir le mot suédois, trouver sa traduction</p>
+        <span class="dir-card-badge">🔤</span>
+      </div>
+      <div class="dir-card" onclick="startGame(pendingMode,'fr2sv')">
+        <span class="dir-card-icon">?→🇸🇪</span>
+        <h3>Français → Suédois</h3>
+        <p>Voir la traduction, trouver le mot suédois</p>
+        <span class="dir-card-badge">🔍</span>
+      </div>
+      <div class="dir-card dir-random" onclick="startGame(pendingMode,'random')">
+        <span class="dir-card-icon">🎲</span>
+        <div><h3>Mélanger les deux sens</h3><p>Questions aléatoires dans les deux directions</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="quizScreen" class="screen">
+  <button class="btn-back" onclick="goMenu()">← Retour menu</button>
+  <div class="quiz-header">
+    <span class="quiz-mode-lbl" id="modeLbl"></span>
+    <div class="streak-display" id="streakDisplay">🔥 <span id="streakNum">0</span></div>
+    <div class="lives" id="livesDisplay"></div>
+    <span class="score-lbl" id="scoreLbl">0 pts</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="char-card-wrap">
+    <div class="char-card" id="charCard">
+      <button class="speak-btn" onclick="speakCurrent()">🔊 Écouter</button>
+      <div class="main-char" id="mainChar"></div>
+      <div style="font-size:12px;color:var(--aurora-teal);margin-top:6px;font-family:'Courier New',monospace;letter-spacing:0.5px;background:rgba(26,188,156,0.08);border-radius:6px;padding:3px 8px;display:inline-block;cursor:pointer;transition:background .15s" id="charHint" onclick="showPhoneticModal()" title="Cliquez pour le guide de prononciation"></div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;font-style:italic" id="examplePhrase"></div>
+    </div>
+  </div>
+  <div class="options-grid" id="optionsGrid"></div>
+  <div class="feedback" id="feedback"></div>
+  <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Question suivante →</button>
+</div>
+
+<!-- DIRECTION PICKER — RECONSTRUIRE -->
+<div id="reconstructDirScreen" class="screen">
+  <button class="btn-back" onclick="goMenu()">← Retour menu</button>
+  <div class="dir-screen">
+    <div class="dir-title">🧩 Reconstruire</div>
+    <div class="dir-subtitle">Dans quel sens voulez-vous reconstruire ?</div>
+    <div class="dir-grid">
+      <div class="dir-card" onclick="startReconstruct('fr2sv')">
+        <span class="dir-card-icon">🇫🇷→🇸🇪</span>
+        <h3>Français → Suédois</h3>
+        <p>Voir la phrase française, reconstruire en suédois</p>
+        <span class="dir-card-badge">🔤</span>
+      </div>
+      <div class="dir-card" onclick="startReconstruct('sv2fr')">
+        <span class="dir-card-icon">🇸🇪→🇫🇷</span>
+        <h3>Suédois → Français</h3>
+        <p>Voir la phrase suédoise, reconstruire en français</p>
+        <span class="dir-card-badge">🔍</span>
+      </div>
+      <div class="dir-card dir-random" onclick="startReconstruct('random')">
+        <span class="dir-card-icon">🎲</span>
+        <div><h3>Mélanger les deux sens</h3><p>Direction aléatoire à chaque question</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RECONSTRUIRE -->
+<div id="reconstructScreen" class="screen">
+  <button class="btn-back" onclick="goMenu()">← Retour menu</button>
+  <div class="quiz-header">
+    <span class="quiz-mode-lbl" id="rModeLbl">🧩 Reconstruire</span>
+    <div class="lives" id="rLivesDisplay"></div>
+    <span class="score-lbl" id="rScoreLbl">0 pts</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="rProgressFill" style="width:0%"></div></div>
+  <div class="char-card-wrap">
+    <div class="char-card">
+      <button class="speak-btn" onclick="speakReconstruct()">🔊 Écouter</button>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px" id="rInstruction">Reconstituez la phrase en suédois :</div>
+      <div id="rTranslation" style="font-size:16px;font-weight:700;line-height:1.4;color:var(--snow);text-align:center"></div>
+      <div id="rHint" style="font-size:11px;color:var(--aurora-teal);font-family:'Courier New',monospace;margin-top:5px;text-align:center;opacity:0;transition:opacity .3s;background:rgba(26,188,156,0.08);border-radius:6px;padding:2px 8px;display:inline-block"></div>
+    </div>
+  </div>
+  <div class="reconstruct-zone">
+    <div class="reconstruct-slots" id="reconstructSlots">
+      <span style="font-size:13px;color:var(--text-muted);font-style:italic">Cliquez les mots pour former la phrase…</span>
+    </div>
+  </div>
+  <div class="word-bank-label">Mots disponibles — cliquez pour placer :</div>
+  <div class="word-bank" id="wordBank"></div>
+  <div class="feedback" id="rFeedback"></div>
+  <button class="btn-red" id="rCheckBtn" onclick="checkReconstruct()" style="display:none">Vérifier ✓</button>
+  <button class="next-btn" id="rNextBtn" onclick="nextReconstructQ()">Question suivante →</button>
+</div>
+
+<!-- DIRECTION PICKER — DICTEE -->
+<div id="dicteeDirScreen" class="screen">
+  <button class="btn-back" onclick="goMenu()">← Retour menu</button>
+  <div class="dir-screen">
+    <div class="dir-title">👂 Dictée</div>
+    <div class="dir-subtitle">Quel type de dictée ?</div>
+    <div class="dir-grid">
+      <div class="dir-card" onclick="startDictee('mots')">
+        <span class="dir-card-icon">🔤</span>
+        <h3>Mots du vocab</h3>
+        <p>Écoutez un mot, cliquez les lettres</p>
+        <span class="dir-card-badge">📖</span>
+      </div>
+      <div class="dir-card" onclick="startDictee('phrases')">
+        <span class="dir-card-icon">💬</span>
+        <h3>Phrases</h3>
+        <p>Écoutez une phrase, cliquez les mots</p>
+        <span class="dir-card-badge">💬</span>
+      </div>
+      <div class="dir-card dir-random" onclick="startDictee('mixte')">
+        <span class="dir-card-icon">🎲</span>
+        <div><h3>Mixte</h3><p>Vocab + Phrases mélangés</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RECONSTRUIRE — DICTEE — ecran principal -->
+<div id="dicteeScreen" class="screen">
+  <button class="btn-back" onclick="goMenu()">← Retour menu</button>
+  <div class="quiz-header">
+    <span class="quiz-mode-lbl" id="dModeLbl">👂 Dictée</span>
+    <div class="lives" id="dLivesDisplay"></div>
+    <span class="score-lbl" id="dScoreLbl">0 pts</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="dProgressFill" style="width:0%"></div></div>
+
+  <div class="char-card-wrap">
+    <div class="char-card" style="text-align:center">
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:center">
+        <button class="speak-btn" onclick="playDicteeAudio()" style="font-size:16px;padding:12px 24px">🔊 Écouter</button>
+        <input type="range" id="dicteeSpeedSlider" min="0.3" max="1.2" step="0.05" value="0.65" oninput="changeDicteeSpeed()" style="width:80px;accent-color:var(--aurora-teal)" title="Régler la vitesse"/>
+        <span id="dicteeSpeedLbl" style="font-size:13px;font-weight:700;color:var(--aurora-teal);min-width:32px">0.65x</span>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:8px;font-style:italic">Écoutez puis composez la réponse ci-dessous</div>
+    </div>
+  </div>
+
+  <!-- Zone réponse (slots) -->
+  <div class="reconstruct-zone">
+    <div class="reconstruct-slots" id="dicteeSlots">
+      <span style="font-size:13px;color:var(--text-muted);font-style:italic">Cliquez pour composer votre réponse…</span>
+    </div>
+  </div>
+
+  <!-- Banque de mots -->
+  <div class="word-bank-label">Mots / lettres disponibles :</div>
+  <div class="word-bank" id="dicteeBank"></div>
+
+  <div class="feedback" id="dFeedback"></div>
+  <button class="btn-red" id="dCheckBtn" onclick="checkDictee()" style="display:none">Vérifier ✓</button>
+  <button class="next-btn" id="dNextBtn" onclick="nextDicteeQ()">Question suivante →</button>
+</div>
+
+<!-- DÉFI JOURNALIER -->
+<div id="defiScreen" class="screen">
+  <button class="btn-back" onclick="goMenu()">← Retour menu</button>
+  <div class="defi-header">
+    <h2>🏆 Défi Journalier</h2>
+    <p id="defiDateLbl"></p>
+    <div class="defi-countdown" id="defiCountdown">⏳ Prochain défi dans <span id="defiTimer">--:--:--</span></div>
+  </div>
+  <div class="defi-steps" id="defiSteps"></div>
+  <div class="defi-phase-lbl" id="defiPhaseLbl">PHASE 1</div>
+  <div id="defiQuizZone">
+    <div class="quiz-header">
+      <span class="quiz-mode-lbl" id="defiModeLbl">Défi</span>
+      <div class="lives" id="defiLivesDisplay"></div>
+      <span class="score-lbl" id="defiScoreLbl">0 pts</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="defiProgressFill" style="width:0%"></div></div>
+    <div class="char-card-wrap">
+      <div class="char-card" id="defiCharCard">
+        <button class="speak-btn" onclick="speakDefi()">🔊 Écouter</button>
+        <div class="main-char" id="defiMainChar"></div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:6px" id="defiHint"></div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;font-style:italic" id="defiEx"></div>
+      </div>
+    </div>
+    <div class="options-grid" id="defiOptionsGrid"></div>
+    <div class="feedback" id="defiFeedback"></div>
+    <button class="next-btn" id="defiNextBtn" onclick="nextDefiQuestion()">Question suivante →</button>
+  </div>
+  <div id="defiAlreadyDone" style="display:none">
+    <div class="defi-already-done">
+      <div class="big-check">✅</div>
+      <h3>Défi du jour terminé !</h3>
+      <p>Revenez demain pour un nouveau défi.</p>
+    </div>
+    <div class="defi-history" id="defiHistory"></div>
+    <button class="btn-ghost" onclick="goMenu()">← Retour au menu</button>
+  </div>
+</div>
+
+<!-- RÉSULTAT DÉFI -->
+<div id="defiResultScreen" class="screen">
+  <div class="defi-result-wrap">
+    <div class="defi-trophy" id="defiTrophy">🏆</div>
+    <div class="defi-stars" id="defiStarsRow"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+    <div class="result-msg" id="defiResultMsg"></div>
+    <div class="result-sub" id="defiResultSub" style="margin-bottom:.75rem"></div>
+    <div class="score-circle" style="margin-bottom:.85rem">
+      <span class="big-score" id="defiFinalScore"></span>
+      <span class="score-total" id="defiFinalTotal"></span>
+    </div>
+    <div class="defi-xp-bar">
+      <div class="xp-label"><span>✨ XP gagné</span><span id="defiXpGained">+0 XP</span></div>
+      <div class="defi-xp-fill-wrap"><div class="defi-xp-fill" id="defiXpFill"></div></div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;text-align:right" id="defiTotalXp"></div>
+    </div>
+    <div class="defi-badges" id="defiBadgesRow"></div>
+    <div class="defi-history" id="defiResultHistory" style="margin-bottom:.85rem"></div>
+    <button class="btn-red" onclick="goMenu()">← Retour au menu</button>
+  </div>
+</div>
+
+<!-- RÉSULTATS -->
+<div id="resultsScreen" class="screen">
+  <button class="btn-back" onclick="goMenu()">← Retour menu</button>
+  <div class="results">
+    <div class="result-emoji" id="resultEmoji">⭐</div>
+    <div class="score-circle">
+      <span class="big-score" id="finalScore"></span>
+      <span class="score-total" id="finalTotal"></span>
+    </div>
+    <div class="result-msg" id="resultMsg"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-val" id="stCorrect">0</div><div class="stat-lbl">corrects</div></div>
+      <div class="stat-box"><div class="stat-val" id="stWrong">0</div><div class="stat-lbl">erreurs</div></div>
+      <div class="stat-box"><div class="stat-val" id="stPct">0%</div><div class="stat-lbl">réussite</div></div>
+    </div>
+    <div class="perf-chart" id="perfChart" style="display:none">
+      <h4>Performance par question</h4>
+      <div class="perf-bars" id="perfBars"></div>
+    </div>
+    <div class="wrong-list" id="wrongList"></div>
+    <button class="btn-red" id="replayBtn" onclick="replayLast()">Rejouer</button>
+    <button class="btn-ghost" onclick="goMenu()">← Changer de mode</button>
+  </div>
+</div>
+
+<!-- TRADUCTEUR FR ↔ SE -->
+<div id="translatorScreen" class="screen">
+  <button class="btn-back" onclick="goMenu()">← Retour menu</button>
+  <div class="trad-screen">
+
+    <!-- Toggle direction -->
+    <div class="trad-dir-toggle">
+      <button class="trad-lang-btn active" id="tradLangA" onclick="setTradDir('fr2sv')">🇫🇷 Français</button>
+      <button class="trad-swap-btn" onclick="swapTradDir()" title="Inverser">⇄</button>
+      <button class="trad-lang-btn" id="tradLangB" onclick="setTradDir('sv2fr')">🇸🇪 Suédois</button>
+    </div>
+
+    <!-- Zone saisie -->
+    <div class="trad-box">
+      <div class="trad-box-label">
+        <span id="tradSrcFlag">🇫🇷</span> <span id="tradSrcLang">Français — texte à traduire</span>
+      </div>
+      <textarea class="trad-textarea" id="tradInput" placeholder="Écrivez ou dictez votre texte…" rows="3" oninput="onTradInput()"></textarea>
+      <div class="trad-actions">
+        <button class="trad-icon-btn" id="tradMicBtn" onclick="toggleDictation()" title="Dicter">🎤 Dicter</button>
+        <button class="trad-icon-btn" onclick="clearTradInput()" title="Effacer">✕ Effacer</button>
+      </div>
+    </div>
+
+    <!-- Bouton traduire -->
+    <button class="trad-translate-btn" id="tradBtn" onclick="doTranslate()" disabled>🔍 Traduire avec Google</button>
+
+    <!-- Zone résultat -->
+    <div class="trad-result-box" id="tradResultBox" style="display:none">
+      <div class="trad-box-label">
+        <span id="tradDstFlag">🇸🇪</span> <span id="tradDstLang">Traduction suédoise</span>
+      </div>
+      <div id="tradResultText" class="trad-result-text"></div>
+      <div id="tradResultHint" class="trad-result-hint"></div>
+      <div class="trad-actions" style="margin-top:8px">
+        <button class="trad-icon-btn" id="tradSpeakBtn" onclick="speakTranslation()" title="Écouter">🔊 Écouter</button>
+        <button class="trad-icon-btn" onclick="copyTranslation()" title="Copier">📋 Copier</button>
+      </div>
+    </div>
+
+    <div id="tradLoading" class="ai-loading" style="display:none"><div class="spinner"></div>Google Translate…</div>
+
+    <!-- Historique -->
+    <div class="trad-history" id="tradHistoryZone" style="display:none">
+      <div class="trad-history-title">Historique récent</div>
+      <div id="tradHistoryList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CHOIX DIRECTION — APPRENDRE -->
+<div id="learnDirScreen" class="screen">
+  <button class="btn-back" onclick="goMenu()">← Retour menu</button>
+  <div class="learn-dir-screen">
+    <h2 id="learnCatTitle">📂 Catégorie</h2>
+    <p>Comment veux-tu apprendre ?</p>
+    <div class="learn-dir-grid">
+      <div class="learn-dir-card" onclick="startLearnMode('sv')">
+        <div class="learn-dir-card-icon">🇸🇪</div>
+        <h3>Suédois</h3>
+        <p>Vois le mot suédois, clique pour révéler le français</p>
+      </div>
+      <div class="learn-dir-card" onclick="startLearnMode('fr')">
+        <div class="learn-dir-card-icon">🇫🇷</div>
+        <h3>Français</h3>
+        <p>Vois le mot français, clique pour révéler le suédois</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ÉCRAN APPRENDRE -->
+<div id="learnScreen" class="screen">
+  <div class="learn-screen-header">
+    <button class="btn-back" style="margin-bottom:0" onclick="showScreen('learnDirScreen')">←</button>
+    <h2 id="learnScreenTitle">📂 Catégorie</h2>
+    <button class="btn-back" style="margin-bottom:0;margin-left:auto" onclick="goMenu()">Menu</button>
+  </div>
+  <div class="learn-dir-lbl" id="learnDirLabel"></div>
+  <div class="learn-grid" id="learnGrid"></div>
+</div>
+
+</div><!-- .game -->
+
+
+    <script src="js/audio-injector.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+  </html>
